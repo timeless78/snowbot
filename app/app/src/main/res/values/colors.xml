@@ -1,0 +1,9 @@
+<resources>
+    <color name="bg">#0F161D</color>
+    <color name="surface">#1A2530</color>
+    <color name="ink">#E6EDF3</color>
+    <color name="muted">#93A4B4</color>
+    <color name="carrot">#F0884A</color>
+    <color name="ok">#5CC896</color>
+    <color name="warn">#E0B45A</color>
+</resources>

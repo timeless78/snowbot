@@ -1,0 +1,52 @@
+<resources>
+    <style name="Theme.SnowBotHub" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="colorAccent">@color/carrot</item>
+    </style>
+
+    <!-- 차 화면: 글자 크게, 누르는 곳은 76dp 이상 -->
+    <style name="Title">
+        <item name="android:textSize">40sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+    <style name="Status">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/muted</item>
+        <item name="android:layout_marginTop">8dp</item>
+    </style>
+    <style name="Body">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:layout_marginTop">16dp</item>
+    </style>
+    <style name="Speech">
+        <item name="android:textSize">30sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">20dp</item>
+        <item name="android:background">@color/surface</item>
+    </style>
+    <style name="Input">
+        <item name="android:textSize">26sp</item>
+        <item name="android:minHeight">76dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textColorHint">@color/muted</item>
+    </style>
+    <style name="Action">
+        <item name="android:textSize">28sp</item>
+        <item name="android:minHeight">96dp</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:textColor">#1A0E06</item>
+        <item name="android:backgroundTint">@color/carrot</item>
+    </style>
+    <style name="Quiet">
+        <item name="android:textSize">20sp</item>
+        <item name="android:minHeight">76dp</item>
+        <item name="android:layout_marginTop">24dp</item>
+        <item name="android:textColor">@color/muted</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+</resources>

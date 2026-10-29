@@ -1,0 +1,6 @@
+# 443(wss·https) → 중계 서버(127.0.0.1:3000). 인증서는 Caddy 가 Let's Encrypt 에서 자동으로 받고 갱신한다.
+# sslip.io: 주소 안의 IP 로 바로 연결되는 무료 이름 — 도메인을 사지 않고 인증서를 받기 위해 쓴다.
+# 저장소에는 자리표시(<서버-IP>)만 둔다. 실제 주소가 든 배포용 사본은 Caddyfile.local (git 에 안 올림).
+<서버-IP>.sslip.io {
+	reverse_proxy 127.0.0.1:3000
+}

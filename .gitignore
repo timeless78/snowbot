@@ -1,0 +1,26 @@
+# 공통
+.DS_Store
+.claude/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/node_modules/
+
+# 비밀 · 로컬 설정 (서버 주소는 local.properties 에만)
+local.properties
+*.env
+secrets.env
+*.db
+
+# 안드로이드 빌드
+app/.gradle/
+app/.kotlin/
+app/**/build/
+*.iml
+.idea/
+
+# CAD 스크립트가 다시 만드는 결과물 (python cad/oneclick_kit.py 등)
+cad/out/
+
+# 실제 서버 주소가 든 배포용 설정 (저장소에는 자리표시만)
+server/deploy/*.local

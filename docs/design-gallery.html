@@ -1,0 +1,390 @@
+<title>SnowBot 디자인 기록</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 제품 개발 도면철처럼 — 위에 현재 기준안(C), 아래로 단계별 그림(FIG 번호는 만든 순서), 눌러서 크게 보기. */
+:root {
+  --bg: #edf0f2;
+  --paper: #ffffff;
+  --ink: #1b1f24;
+  --muted: #5b6570;
+  --line: #d4d9df;
+  --mech: #3a4047;
+  --orange: #d2541a;
+  --orange-soft: #fbe5d8;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121518; --paper: #1a1e23; --ink: #e6e9ed; --muted: #98a1ab; --line: #2a3037;
+    --mech: #c3c9d0; --orange: #f0793c; --orange-soft: #3a2115; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121518; --paper: #1a1e23; --ink: #e6e9ed; --muted: #98a1ab; --line: #2a3037;
+  --mech: #c3c9d0; --orange: #f0793c; --orange-soft: #3a2115; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 72px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { margin: 0; line-height: 1.25; text-wrap: balance; font-weight: 700; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.02rem; font-weight: 600; }
+p { margin: 0; }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--muted); }
+.label { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+
+/* 머리 */
+.top { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.top-img { margin: 0; display: grid; gap: 8px; }
+.top-img button { padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--paper); cursor: zoom-in; display: block; }
+.top-img img { display: block; width: 100%; height: auto; }
+.top-text { display: grid; gap: 18px; min-width: 0; }
+.plate { display: inline-flex; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: 0.8rem; border: 1px solid var(--mech); color: var(--mech); border-radius: 6px; padding: 3px 10px; width: fit-content; }
+.plate b { color: var(--orange); font-weight: 500; }
+.lead { max-width: 60ch; display: grid; gap: 10px; }
+.spec { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); overflow: hidden; }
+.spec table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.spec th, .spec td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.spec tr:last-child th, .spec tr:last-child td { border-bottom: 0; }
+.spec th { width: 7.5em; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+/* 결정 순서 */
+.timeline { display: grid; gap: 14px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: step; }
+.steps li { counter-increment: step; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+.steps li::before { content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.75rem; color: var(--orange); }
+.steps li.now { border-color: var(--orange); background: var(--orange-soft); }
+.steps strong { font-size: 0.92rem; }
+.steps span { font-size: 0.8rem; color: var(--muted); }
+
+/* 필터 */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filters button { font: inherit; font-size: 0.85rem; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 4px 14px; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* 단계 */
+.stage { display: grid; gap: 18px; }
+.stage-head { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.stage-head p { max-width: 70ch; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.fig { margin: 0; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.fig.wide { grid-column: 1 / -1; }
+.fig .shot { padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper); cursor: zoom-in; display: block; width: 100%; }
+.fig .shot img { display: block; width: 100%; height: auto; transition: transform .25s ease; }
+.fig .shot:hover img { transform: scale(1.02); }
+.fig figcaption { display: grid; gap: 4px; }
+.fig .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.fig .no { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.fig p { font-size: 0.88rem; color: var(--muted); max-width: 72ch; }
+.fig.is-hidden { display: none; }
+.chip { font-size: 0.72rem; font-weight: 600; padding: 1px 8px; border-radius: 6px; white-space: nowrap; }
+.chip.pick { background: var(--orange); color: var(--paper); }
+.chip.prev { border: 1px solid var(--line); color: var(--muted); }
+.chip.drop { border: 1px dashed var(--muted); color: var(--muted); }
+.chip.ref { background: var(--line); color: var(--ink); }
+.chip.todo { border: 1px dashed var(--orange); color: var(--orange); }
+.pending { border: 1.5px dashed var(--line); border-radius: 12px; aspect-ratio: 1312 / 1199; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--muted); font-size: 0.88rem; background: transparent; }
+.diff { font-size: 0.84rem; color: var(--muted); border-left: 3px solid var(--orange); padding: 6px 12px; max-width: 80ch; }
+
+/* 크게 보기 */
+.viewer { position: fixed; inset: 0; z-index: 50; background: rgba(10, 12, 14, 0.92); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); color: #f2f4f6; }
+.viewer-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.viewer-bar span { font-family: var(--font-mono); font-size: 0.8rem; color: #b9c1c9; }
+.viewer button { font: inherit; background: #2a3037; color: #f2f4f6; border: 0; border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+.viewer-img { min-height: 0; display: grid; place-items: center; }
+.viewer-img img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+.viewer-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.viewer-foot p { font-size: 0.9rem; max-width: 70ch; }
+footer { font-size: 0.82rem; color: var(--muted); display: grid; gap: 4px; }
+
+@media (max-width: 820px) {
+  .top { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .fig .shot img { transition: none; } }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <figure class="top-img">
+      <button type="button" class="shot" data-src="assets/web/design-tech__c2-hero.jpg" data-cap="FIG.18 · C 공업 디자인 연출 사진" aria-label="현재 기준안 그림 크게 보기">
+        <img src="assets/web/design-tech__c2-hero.jpg" alt="책상 위의 흰색 눈사람 로봇. 육각 나사가 드러난 매끈한 흰 껍데기, 주황 당근 코, 주황 니트 목도리, 드러난 금속 목 관절, 몸통의 점 구멍 스피커와 SNW-01 각인" width="1312" height="1199">
+      </button>
+      <span class="label">FIG.18 · 현재 기준안 연출</span>
+    </figure>
+    <div class="top-text">
+      <span class="plate">SNW-01 <b>REV C</b> 2026-10-26</span>
+      <h1>SnowBot 디자인 기록</h1>
+      <div class="lead">
+        <p>책상 위에 두는 눈사람 모양 AI 로봇의 그림을 만든 순서대로 모았습니다. 지금 기준안은 <strong>C 공업 디자인</strong>입니다. 나사, 스피커 구멍, 목 관절처럼 로봇에 원래 있는 부품을 숨기지 않고 디자인으로 드러냅니다.</p>
+        <p class="muted">그림은 모두 이미지 생성으로 만든 콘셉트입니다. 실제 부품 배치는 1단계 부품을 받아 치수를 잰 뒤 정합니다. 그림을 누르면 크게 볼 수 있습니다.</p>
+      </div>
+      <div class="spec">
+        <table>
+          <tr><th>색</th><td>흰색·밝은 회색 몸체, 짙은 회색 기계 부품, 주황 포인트(코·목도리)</td></tr>
+          <tr><th>표면</th><td>매끈한 무광. 일반 흰색 출력 재료</td></tr>
+          <tr><th>눈</th><td>흰자 + 가운데 고정 검은자 2개, 양쪽 금속색 테. 오른쪽 검은자에 카메라</td></tr>
+          <tr><th>눈꺼풀·눈썹</th><td>흰 눈꺼풀(한 모터), 검은 고무 눈썹이 축으로 회전(한 모터)</td></tr>
+          <tr><th>머리</th><td>앞 얼굴판 + 뒤 덮개, 육각 M2 나사. 뒤에 환기 구멍과 마이크 구멍</td></tr>
+          <tr><th>목·몸통</th><td>드러낸 회전판과 끄덕임 축, 점 구멍 스피커, SNW-01 각인</td></tr>
+          <tr><th>바닥</th><td>USB-C 단자, 고무발 4개, 금속 무게판</td></tr>
+          <tr><th>없는 것</th><td>얼굴 화면, 팔, LED</td></tr>
+        </table>
+      </div>
+    </div>
+  </header>
+
+  <section class="timeline" aria-labelledby="tl-h">
+    <span class="label">결정한 순서</span>
+    <h2 id="tl-h" hidden>결정한 순서</h2>
+    <ol class="steps">
+      <li><strong>얼굴 화면 없음</strong><span>카메라 1개를 눈처럼</span></li>
+      <li><strong>눈 2개 · 카메라 1개</strong><span>눈꺼풀, 당근 코, 목도리, 팔 없음</span></li>
+      <li><strong>D + 큰 머리</strong><span>눈 뭉치 질감</span></li>
+      <li><strong>움직이는 눈썹</strong><span>회전만 함</span></li>
+      <li><strong>흰자 + 검은자</strong><span>석탄 눈 대신</span></li>
+      <li class="now"><strong>테크 눈사람 C</strong><span>공업 디자인, 현재 기준안</span></li>
+    </ol>
+  </section>
+
+  <div class="filters" role="group" aria-label="그림 거르기">
+    <button type="button" data-filter="all" aria-pressed="true">전체 20장</button>
+    <button type="button" data-filter="pick" aria-pressed="false">선택·현재</button>
+    <button type="button" data-filter="old" aria-pressed="false">이전·버린 안</button>
+  </div>
+
+  <section class="stage" aria-labelledby="s1">
+    <div class="stage-head">
+      <span class="label">Stage 1 · 출발점</span>
+      <h2 id="s1">ChatGPT 콘셉트에서 화면 없는 얼굴로</h2>
+      <p>ChatGPT 대화에서 나온 첫 그림은 얼굴이 화면이고 팔이 있었습니다. 화면 얼굴은 흔하고, 팔은 제어하기 어려워서 둘 다 뺐습니다.</p>
+    </div>
+    <div class="grid">
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/snowbot-concept-chatgpt.jpg" data-cap="FIG.01 · ChatGPT 초기 콘셉트"><img src="assets/web/snowbot-concept-chatgpt.jpg" alt="얼굴이 화면이고 팔이 달린 초기 눈사람 로봇 그림" width="1400" height="933" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.01</span><span class="chip drop">버림</span></div><h3>ChatGPT 초기 콘셉트</h3><p>얼굴 화면 + 팔. 참고용으로만 남겼습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/snowbot-concept-v2.jpg" data-cap="FIG.02 · 콘셉트 v2"><img src="assets/web/snowbot-concept-v2.jpg" alt="매끈한 흰 몸체에 검은 석탄 눈, 당근 코, 파란 목도리를 한 눈사람 로봇" width="1400" height="933" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.02</span><span class="chip prev">이전 판</span></div><h3>콘셉트 v2</h3><p>화면 없음. 같은 모양의 석탄 눈 2개 중 1개가 카메라. 몸과 같은 색 눈꺼풀, 짧은 당근 코, 탈착 목도리, 팔 없음.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stage" aria-labelledby="s2">
+    <div class="stage-head">
+      <span class="label">Stage 2 · 디자인 시안</span>
+      <h2 id="s2">재질과 비율을 바꾼 4가지 시안</h2>
+      <p>구조는 그대로 두고 비율, 재질, 소품, 분위기만 바꿨습니다. D(진짜 눈 질감)에 A의 큰 머리를 합친 안을 골랐다가, 이후 테크 디자인으로 바꿨습니다.</p>
+    </div>
+    <div class="grid">
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-options__a-chibi.jpg" data-cap="FIG.03 · A 큰 머리"><img src="assets/web/design-options__a-chibi.jpg" alt="머리가 몸통보다 큰 말랑한 흰색 눈사람 로봇, 분홍 목도리" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.03</span><span class="chip prev">비율만 채택</span></div><h3>A. 큰 머리</h3><p>아기 같은 비율. 눈꺼풀이 눈 위에 덮인 모습이 가장 잘 보였습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-options__b-nordic.jpg" data-cap="FIG.04 · B 북유럽 도자기"><img src="assets/web/design-options__b-nordic.jpg" alt="원목 받침 위의 미색 도자기 느낌 눈사람 로봇" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.04</span><span class="chip drop">버림</span></div><h3>B. 북유럽 도자기</h3><p>인테리어 소품 느낌. 원목 받침은 무게중심을 낮추는 아이디어로 남겼습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-options__c-retro-toy.jpg" data-cap="FIG.05 · C 레트로 장난감"><img src="assets/web/design-options__c-retro-toy.jpg" alt="양동이 모자와 줄무늬 목도리를 한 레트로 장난감 눈사람 로봇" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.05</span><span class="chip drop">버림</span></div><h3>C. 레트로 장난감</h3><p>회색 주름 목을 드러내는 아이디어가 지금의 "목 관절 드러내기"로 이어졌습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-options__d-snow-texture.jpg" data-cap="FIG.06 · D 진짜 눈 질감"><img src="assets/web/design-options__d-snow-texture.jpg" alt="반짝이는 눈 뭉치 질감의 눈사람 로봇, 빨간 목도리, 석탄 단추" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.06</span><span class="chip prev">이전 선택</span></div><h3>D. 진짜 눈 질감</h3><p>반짝이는 눈 뭉치 표면, 석탄 단추를 스피커 구멍으로 쓰는 아이디어.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-options__e-snow-bighead.jpg" data-cap="FIG.07 · D + 큰 머리"><img src="assets/web/design-options__e-snow-bighead.jpg" alt="눈 뭉치 질감에 머리가 큰 눈사람 로봇, 빨간 목도리" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.07</span><span class="chip prev">이전 선택</span></div><h3>D + 큰 머리</h3><p>한때 선택안. "사람들이 좋아할 만한 디자인이 아니다"는 판단으로 테크 시안을 다시 만들었습니다.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stage" aria-labelledby="s3">
+    <div class="stage-head">
+      <span class="label">Stage 3 · 표정과 눈</span>
+      <h2 id="s3">눈썹을 더하고 눈을 흰자 + 검은자로</h2>
+      <p>화면이 없으니 표정은 눈꺼풀, 눈썹, 고개로 만듭니다. 눈썹은 회전만 하고, 눈은 석탄 눈 대신 흰자와 검은자로 정했습니다.</p>
+    </div>
+    <div class="grid">
+      <figure class="fig wide" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/snowbot-expressions-v3.jpg" data-cap="FIG.08 · 표정 v3"><img src="assets/web/snowbot-expressions-v3.jpg" alt="석탄 눈과 나뭇가지 눈썹으로 만든 여러 표정" width="1400" height="700" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.08</span><span class="chip prev">이전 판</span></div><h3>표정 v3 · 석탄 눈 + 움직이는 눈썹</h3></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/snowbot-eye-compare.jpg" data-cap="FIG.09 · 눈 모양 비교"><img src="assets/web/snowbot-eye-compare.jpg" alt="위 줄은 검은 석탄 눈, 아래 줄은 흰자와 검은자가 있는 눈 비교" width="1400" height="933" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.09</span><span class="chip ref">결정 근거</span></div><h3>눈 모양 비교</h3><p>위 줄 석탄 눈, 아래 줄 흰자 + 검은자. 아래 줄로 정했습니다.</p></figcaption>
+      </figure>
+      <figure class="fig wide" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/snowbot-expressions-v4.jpg" data-cap="FIG.10 · 표정 v4"><img src="assets/web/snowbot-expressions-v4.jpg" alt="흰자와 검은자 눈에 눈꺼풀과 눈썹으로 만든 표정 10가지" width="1400" height="700" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.10</span><span class="chip pick">표정 기준</span></div><h3>표정 v4 · 흰자 + 검은자</h3><p>표정 10가지. 외형은 눈 뭉치 질감 시절 그림이지만, 표정을 만드는 방식(눈꺼풀·눈썹·고개)은 C에서도 같습니다.</p></figcaption>
+      </figure>
+    </div>
+    <p class="diff">그림과 실제 구조가 다른 점: 그림에서는 양쪽 눈꺼풀 높이가 다르고, 검은자가 한쪽으로 쏠린 표정이 있습니다. 실제로는 양쪽 눈꺼풀을 한 모터가 같이 움직이고, 검은자는 늘 가운데에 고정입니다.</p>
+  </section>
+
+  <section class="stage" aria-labelledby="s4">
+    <div class="stage-head">
+      <span class="label">Stage 4 · 테크 눈사람</span>
+      <h2 id="s4">기술 제품처럼 보이는 눈사람 4가지</h2>
+      <p>눈사람 캐릭터는 겨울용으로 유지하고, 재질과 마감을 기술 제품 쪽으로 바꿨습니다. C 공업 디자인을 골랐습니다.</p>
+    </div>
+    <div class="grid">
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-tech__a-premium.jpg" data-cap="FIG.11 · A 프리미엄 가전"><img src="assets/web/design-tech__a-premium.jpg" alt="이음새 없는 무광 흰 몸체와 알루미늄 목 링, 회색 목도리의 눈사람 로봇" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.11</span><span class="chip drop">버림</span></div><h3>A. 프리미엄 가전</h3><p>알루미늄 목 링이 인상적. 출력물에 사포질·도장이 필요해 만들기가 가장 어렵습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-tech__b-ice.jpg" data-cap="FIG.12 · B 얼음 투명"><img src="assets/web/design-tech__b-ice.jpg" alt="반투명 껍데기 속으로 기판과 선이 비치는 눈사람 로봇, 하늘색 목도리" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.12</span><span class="chip drop">버림</span></div><h3>B. 얼음 투명</h3><p>속이 비치는 반투명 껍데기. 뒤 덮개만 반투명으로 하는 샘플(FIG.20)로 이어졌습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c-industrial.jpg" data-cap="FIG.13 · C 공업 디자인"><img src="assets/web/design-tech__c-industrial.jpg" alt="육각 나사와 점 구멍 스피커, SNW-01 각인, 주황 목도리의 눈사람 로봇" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.13</span><span class="chip pick">선택</span></div><h3>C. 공업 디자인</h3><p>드러낸 나사와 목 관절, 스피커 그릴, SNW-01 각인. 실제 부품이 디자인이 되어 가장 만들기 쉽습니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="old">
+        <button type="button" class="shot" data-src="assets/web/design-tech__d-lowpoly.jpg" data-cap="FIG.14 · D 로우폴리"><img src="assets/web/design-tech__d-lowpoly.jpg" alt="삼각형 면으로 깎은 다면체 눈사람 로봇, 빨간 목도리" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.14</span><span class="chip drop">버림</span></div><h3>D. 로우폴리</h3><p>평면이라 출력이 깔끔하지만, 기술 제품보다는 디자인 소품 느낌입니다.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stage" aria-labelledby="s5">
+    <div class="stage-head">
+      <span class="label">Stage 5 · C 세부</span>
+      <h2 id="s5">C를 실제 부품 구조에 맞춰 다듬기</h2>
+      <p>머리 2조각과 나사, 눈썹 회전축, 목 관절, 환기 구멍, 바닥의 USB-C와 무게판까지 정했습니다.</p>
+    </div>
+    <div class="grid">
+      <figure class="fig wide" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c2-turnaround.jpg" data-cap="FIG.15 · 정면 · 옆 · 뒤"><img src="assets/web/design-tech__c2-turnaround.jpg" alt="C 디자인의 정면, 옆, 뒤 모습. 뒤에는 가로 환기 구멍, 마이크 구멍, USB-C 단자" width="1400" height="700" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.15</span><span class="chip pick">현재</span></div><h3>정면 · 옆 · 뒤</h3><p>옆에서 머리 앞·뒤 2조각과 나사, 뒤에서 환기 구멍 5줄·마이크 구멍·USB-C 단자가 보입니다. 옆모습의 코는 정한 길이(약 1cm)보다 깁니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c2-details.jpg" data-cap="FIG.16 · 세부 확대"><img src="assets/web/design-tech__c2-details.jpg" alt="눈, 눈썹 회전축, 목 관절, 바닥의 고무발과 무게판 확대 사진 4컷" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.16</span><span class="chip pick">현재</span></div><h3>세부 확대</h3><p>눈, 축에 꽂힌 고무 눈썹(회전만 하는 실제 구조와 같음), 목 관절, 바닥의 고무발·무게판·USB-C.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c2-exploded.jpg" data-cap="FIG.17 · 분해도"><img src="assets/web/design-tech__c2-exploded.jpg" alt="머리 덮개, 보드, 눈, 서보, 베어링, 스피커, 몸통, 무게판을 위아래로 펼친 분해도" width="933" height="1400" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.17</span><span class="chip ref">참고</span></div><h3>분해도</h3><p>부품이 어디쯤 들어가는지 보는 참고 그림. 머리를 위·아래로 나눈 점, 눈썹 연결 방식, 코 길이는 실제 설계와 다릅니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c2-hero.jpg" data-cap="FIG.18 · 연출 사진"><img src="assets/web/design-tech__c2-hero.jpg" alt="겨울 창가 책상 위의 C 디자인 눈사람 로봇" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.18</span><span class="chip pick">현재</span></div><h3>연출 사진</h3><p>키보드와 머그잔 옆, 겨울 창가 책상.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stage" aria-labelledby="s6">
+    <div class="stage-head">
+      <span class="label">Stage 6 · C 샘플</span>
+      <h2 id="s6">색과 마감을 바꿔 본 샘플</h2>
+      <p>아직 고르지 않았습니다. 마음에 드는 쪽을 기준안에 반영합니다.</p>
+    </div>
+    <div class="grid">
+      <figure class="fig wide" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c3-colorways.jpg" data-cap="FIG.19 · 색 조합 3가지"><img src="assets/web/design-tech__c3-colorways.jpg" alt="흰색, 짙은 회색, 연한 얼음 파랑 세 가지 색의 눈사람 로봇이 나란히 서 있음" width="1400" height="933" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.19</span><span class="chip todo">고르는 중</span></div><h3>색 조합 3가지</h3><p>흰색 + 주황 목도리 / 짙은 회색 + 크림 목도리 / 연한 얼음 파랑 + 남색 목도리. 당근 코는 셋 다 주황.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <button type="button" class="shot" data-src="assets/web/design-tech__c3-translucent-back.jpg" data-cap="FIG.20 · 반투명 뒤 덮개"><img src="assets/web/design-tech__c3-translucent-back.jpg" alt="머리 뒤 덮개가 반투명이라 보드와 선이 비치는 눈사람 로봇의 옆뒤 모습" width="1312" height="1199" loading="lazy"></button>
+        <figcaption><div class="meta"><span class="no">FIG.20</span><span class="chip todo">고르는 중</span></div><h3>반투명 뒤 덮개</h3><p>머리 뒤 덮개만 반투명 출력. 앞은 그대로, 뒤로 돌리면 보드가 비칩니다.</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <div class="pending">알루미늄 목 링<br>아직 못 그림 (이미지 생성 한도)</div>
+        <figcaption><div class="meta"><span class="no">FIG.—</span><span class="chip todo">대기</span></div><h3>알루미늄 목 링</h3><p>드러낸 목 관절 대신 줄무늬 알루미늄 링(A 섞기).</p></figcaption>
+      </figure>
+      <figure class="fig" data-group="pick">
+        <div class="pending">겨울 소품<br>아직 못 그림 (이미지 생성 한도)</div>
+        <figcaption><div class="meta"><span class="no">FIG.—</span><span class="chip todo">대기</span></div><h3>겨울 소품</h3><p>니트 비니, 바꿔 끼우는 목도리, 귀마개.</p></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <footer>
+    <span>그림 20장 · 2026-10-26 · 원본 PNG 는 snowbot/docs/assets/ , 이 페이지의 압축본은 docs/assets/web/</span>
+    <span>설명과 결정의 정본은 docs/01-concept.md, docs/02-design-options.md 입니다. 이 페이지와 다르면 문서가 맞습니다.</span>
+  </footer>
+</div>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="그림 크게 보기">
+  <div class="viewer-bar"><span id="v-count"></span><button type="button" id="v-close">닫기</button></div>
+  <div class="viewer-img"><img id="v-img" alt=""></div>
+  <div class="viewer-foot"><button type="button" id="v-prev">이전</button><p id="v-cap"></p><button type="button" id="v-next">다음</button></div>
+</div>
+
+<script>
+(function () {
+  var shots = Array.prototype.slice.call(document.querySelectorAll(".fig .shot"));
+  var viewer = document.getElementById("viewer");
+  var vImg = document.getElementById("v-img");
+  var vCap = document.getElementById("v-cap");
+  var vCount = document.getElementById("v-count");
+  var idx = 0, last = null;
+
+  function visible() { return shots.filter(function (s) { return !s.closest(".fig").classList.contains("is-hidden"); }); }
+  function show(i) {
+    var list = visible();
+    if (!list.length) return;
+    idx = (i + list.length) % list.length;
+    var s = list[idx];
+    vImg.src = s.dataset.src;
+    vImg.alt = s.querySelector("img").alt;
+    vCap.textContent = s.dataset.cap;
+    vCount.textContent = (idx + 1) + " / " + list.length;
+  }
+  function open(btn) {
+    last = btn;
+    var list = visible();
+    show(Math.max(0, list.indexOf(btn)));
+    viewer.hidden = false;
+    document.getElementById("v-close").focus();
+  }
+  function close() { viewer.hidden = true; if (last) last.focus(); }
+
+  shots.forEach(function (s) { s.addEventListener("click", function () { open(s); }); });
+  var topShot = document.querySelector(".top-img .shot");
+  topShot.addEventListener("click", function () {
+    var target = shots.filter(function (s) { return s.dataset.src === topShot.dataset.src; })[0];
+    if (target && !target.closest(".fig").classList.contains("is-hidden")) open(target);
+    else { last = topShot; vImg.src = topShot.dataset.src; vImg.alt = topShot.querySelector("img").alt; vCap.textContent = topShot.dataset.cap; vCount.textContent = ""; viewer.hidden = false; }
+  });
+  document.getElementById("v-close").addEventListener("click", close);
+  document.getElementById("v-prev").addEventListener("click", function () { show(idx - 1); });
+  document.getElementById("v-next").addEventListener("click", function () { show(idx + 1); });
+  viewer.addEventListener("click", function (e) { if (e.target === viewer || e.target.classList.contains("viewer-img")) close(); });
+  document.addEventListener("keydown", function (e) {
+    if (viewer.hidden) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") show(idx - 1);
+    else if (e.key === "ArrowRight") show(idx + 1);
+  });
+
+  var buttons = Array.prototype.slice.call(document.querySelectorAll(".filters button"));
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      var f = b.dataset.filter;
+      buttons.forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      document.querySelectorAll(".fig").forEach(function (fig) {
+        fig.classList.toggle("is-hidden", f !== "all" && fig.dataset.group !== f);
+      });
+    });
+  });
+})();
+</script>

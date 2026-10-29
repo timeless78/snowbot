@@ -1,0 +1,23 @@
+[Unit]
+Description=SnowBot relay server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=snowbot
+Group=snowbot
+WorkingDirectory=/opt/snowbot-relay
+Environment=SNOWBOT_DB=/var/lib/snowbot/relay.db
+# AI API 키 (ELEVENLABS_API_KEY 등). 없어도 서버는 뜬다
+EnvironmentFile=-/var/lib/snowbot/secrets.env
+ExecStart=/opt/snowbot-relay/.venv/bin/uvicorn --factory snowbot_server.main:create_app --host 127.0.0.1 --port 3000 --no-server-header
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/snowbot
+
+[Install]
+WantedBy=multi-user.target

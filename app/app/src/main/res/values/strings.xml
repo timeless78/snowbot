@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">스노봇</string>
+    <string name="hello_line">안녕! 나는 스노봇이야.</string>
+    <string name="status_offline">● 서버 연결 끊김</string>
+    <string name="status_connecting">● 서버에 연결 중…</string>
+    <string name="status_online">● 서버 연결됨</string>
+    <string name="status_unauthorized">● 짝 맺기가 풀렸습니다. 다시 맺어 주세요</string>
+    <string name="status_no_server">● 서버 주소가 없습니다 (local.properties 의 snowbot.server)</string>
+    <string name="device_none">짝 맺은 스노봇이 없습니다</string>
+    <string name="device_on">스노봇 %1$s · 켜짐</string>
+    <string name="device_off">스노봇 %1$s · 꺼짐 (화면 속 스노봇만 움직입니다)</string>
+    <string name="pair_help">스노봇 바닥의 QR 스티커에 있는 기기 번호와 등록 코드를 넣어 주세요.</string>
+    <string name="pair_device_hint">기기 번호 (예: SNW-01-A1B2)</string>
+    <string name="pair_claim_hint">등록 코드</string>
+    <string name="pair_button">짝 맺기</string>
+    <string name="pair_working">짝 맺는 중…</string>
+    <string name="pair_failed">짝 맺기 실패: %1$s</string>
+    <string name="act_greet">인사하기</string>
+    <string name="act_rest">쉬어가기 제안</string>
+    <string name="act_worry">걱정하기</string>
+    <string name="air_unknown">실내 공기: 아직 값이 없습니다</string>
+    <string name="air_value">실내 공기: CO₂ %1$d ppm · %2$.1f°C</string>
+    <string name="unpair">짝 풀기</string>
+    <string name="talk_start">스노봇과 말하기</string>
+    <string name="talk_stop">다 말했어요 (누르면 끝)</string>
+    <string name="talk_listening">듣고 있어요…</string>
+    <string name="talk_heard">나: %1$s</string>
+    <string name="talk_no_mic">마이크를 열 수 없습니다. 마이크 권한을 확인해 주세요.</string>
+    <string name="voice_device">목소리: 스노봇 스피커 (누르면 바뀜)</string>
+    <string name="voice_app">목소리: 차 스피커 (누르면 바뀜)</string>
+    <string name="line_greet">안녕! 나는 스노봇이야. 오늘도 같이 있어 줄게.</string>
+    <string name="line_rest">조금 쉬어갈까요? 다음 쉼터에서 잠깐 쉬어요.</string>
+    <string name="line_worry">괜찮아요? 천천히 가도 돼요.</string>
+    <string name="car_unknown">차: 차량 정보를 기다리는 중</string>
+    <string name="car_parked">차: 주차 중(P) · 주의 경고 %1$s</string>
+    <string name="car_driving">차: 주행 중(%1$s) · 연속 운전 %2$d분 · 주의 경고 %3$s</string>
+    <string name="car_failed">차: 차량 정보를 못 받음 (%1$s)</string>
+    <string name="car_attention_on">켜짐</string>
+    <string name="car_attention_off">없음</string>
+    <string name="car_hours">%1$d시간</string>
+    <string name="car_hours_mins">%1$d시간 %2$d분</string>
+    <string name="car_rest">벌써 %1$s째 운전 중이에요. 쉼터에서 잠깐 쉬어 가요.</string>
+    <string-array name="car_depart">
+        <item>출발해요! 오늘도 안전하게 가요.</item>
+        <item>출발! 저는 옆에서 차 안 공기 살필게요.</item>
+    </string-array>
+    <string-array name="car_arrive">
+        <item>도착했어요! 운전하느라 수고했어요.</item>
+        <item>잘 도착했어요. 오늘도 수고 많았어요!</item>
+    </string-array>
+    <string-array name="car_arrive_long">
+        <item>도착! 오래 운전했으니 푹 쉬어요.</item>
+    </string-array>
+    <string-array name="car_attention">
+        <item>차가 주의 경고를 띄웠어요. 다음 쉼터에서 잠깐 쉬어 가요.</item>
+        <item>많이 피곤한가 봐요. 쉼터에서 잠깐 쉬었다 가요.</item>
+    </string-array>
+    <string name="line_air">차 안 공기가 답답해요. 창문을 조금 열어 볼까요?</string>
+</resources>

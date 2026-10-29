@@ -1,0 +1,615 @@
+<title>SnowBot 부품 목록</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 부품 데이터시트처럼 — 위에 요약(그림·합계·진행), 아래로 단계별 표와 설계 메모. 한 줄 폭 약 1040px. */
+:root {
+  --bg: #f2f5f8;
+  --surface: #ffffff;
+  --ink: #1a2330;
+  --muted: #586577;
+  --line: #d6dee8;
+  --soft: #e8eef4;
+  --carrot: #c95a17;
+  --carrot-soft: #fbe9dc;
+  --scarf: #a92f37;
+  --ok: #2c6e9e;
+  --ok-soft: #e1edf6;
+  --font-display: "Jua", "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d131b; --surface: #151e29; --ink: #e5ebf2; --muted: #95a3b4; --line: #26323f; --soft: #1c2734;
+    --carrot: #f08a44; --carrot-soft: #3a2517; --scarf: #e46670; --ok: #7db6e0; --ok-soft: #1a2c3c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d131b; --surface: #151e29; --ink: #e5ebf2; --muted: #95a3b4; --line: #26323f; --soft: #1c2734;
+  --carrot: #f08a44; --carrot-soft: #3a2517; --scarf: #e46670; --ok: #7db6e0; --ok-soft: #1a2c3c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 48px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; line-height: 1.25; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+.prose { max-width: 66ch; display: grid; gap: 10px; }
+.muted { color: var(--muted); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 0.78rem; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+a { color: var(--ok); }
+:focus-visible { outline: 2px solid var(--carrot); outline-offset: 2px; }
+
+/* 머리 부분 */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 32px; align-items: start; }
+.hero-text { display: grid; gap: 16px; min-width: 0; }
+.hero figure { margin: 0; display: grid; gap: 8px; }
+.hero img { width: 100%; border-radius: 14px; display: block; border: 1px solid var(--line); }
+.hero figcaption { font-size: 0.8rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.85rem; color: var(--muted); align-items: center; }
+
+.totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.total { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 2px; }
+.total .label { font-size: 0.82rem; color: var(--muted); }
+.total .value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 500; }
+.total.main { border-color: var(--carrot); background: var(--carrot-soft); }
+.total .note { font-size: 0.78rem; color: var(--muted); }
+
+/* 진행 상황 */
+.progress { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 10px; }
+.progress-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; align-items: baseline; }
+.bar { height: 10px; background: var(--soft); border-radius: 999px; overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--carrot); transition: width .25s ease; }
+.reset { font: inherit; font-size: 0.82rem; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 2px 10px; cursor: pointer; }
+.reset:hover { color: var(--ink); border-color: var(--muted); }
+
+/* 단계 */
+.stages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.stage .cost { font-family: var(--font-mono); color: var(--carrot); font-weight: 500; }
+.section { display: grid; gap: 18px; }
+.section-head { display: grid; gap: 6px; }
+
+/* 표 */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; min-width: 760px; }
+th, td { padding: 11px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { font-size: 0.78rem; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; background: var(--soft); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+td.r, th.r { text-align: right; }
+td .part { font-weight: 600; }
+td .spec { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+tr.done td { color: var(--muted); }
+tr.done .part { text-decoration: line-through; text-decoration-color: var(--carrot); }
+tfoot td { font-weight: 600; background: var(--soft); border-bottom: 0; }
+.check { width: 44px; }
+.check input { width: 18px; height: 18px; accent-color: var(--carrot); cursor: pointer; margin: 3px 0 0; }
+
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 1px 7px; border-radius: 6px; white-space: nowrap; vertical-align: 1px; }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.est { border: 1px dashed var(--muted); color: var(--muted); }
+.tag.warn { background: var(--carrot-soft); color: var(--carrot); }
+
+/* 이유·대안 */
+.notes { display: grid; gap: 10px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 0 16px; }
+details[open] { padding-bottom: 14px; }
+summary { cursor: pointer; padding: 12px 0; font-weight: 600; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "+"; font-family: var(--font-mono); color: var(--carrot); width: 1ch; }
+details[open] summary::before { content: "−"; }
+details ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 70ch; }
+
+.callout { border-left: 4px solid var(--carrot); background: var(--carrot-soft); border-radius: 0 12px 12px 0; padding: 16px 18px; display: grid; gap: 8px; }
+.callout ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 72ch; }
+
+/* 배선 */
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-mono); font-size: 0.8rem; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--soft); }
+.chip.power { border-color: var(--scarf); color: var(--scarf); background: transparent; }
+.pins { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; }
+.pin { height: 44px; border-radius: 6px; display: grid; place-items: center; font-size: 0.7rem; font-weight: 600; text-align: center; line-height: 1.1; }
+.pin.servo { background: var(--carrot); color: var(--surface); }
+.pin.amp { background: var(--ok); color: var(--surface); }
+.pin.free { border: 1px dashed var(--line); color: var(--muted); }
+.pin-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--muted); }
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.diagram pre { margin: 0; }
+.bullets { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; max-width: 72ch; }
+
+/* 정할 것 */
+.decide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tools { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tools label { display: flex; gap: 10px; align-items: baseline; cursor: pointer; }
+.tools input { accent-color: var(--carrot); width: 16px; height: 16px; flex: none; }
+.next { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 22px; display: grid; gap: 8px; }
+.next h2 { color: var(--bg); }
+.next p { max-width: 66ch; }
+footer { font-size: 0.82rem; color: var(--muted); display: grid; gap: 4px; }
+
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero figure { max-width: 320px; }
+  .totals, .stages, .grid-2, .decide { grid-template-columns: 1fr; }
+  .pin { height: 52px; font-size: 0.62rem; }
+}
+@media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">SnowBot (가칭) · 시제품 1대 · 2026-10-26 기준</span>
+      <h1>SnowBot 부품 목록</h1>
+      <div class="prose">
+        <p>책상 위에 두는 눈사람 모양 AI 로봇을 만들 부품입니다. 서보 4개로 고개 좌우·끄덕임·눈꺼풀·눈썹을 움직이고, 카메라 1개는 한쪽 눈의 검은자 속에 들어갑니다. 스피커는 몸통의 석탄 단추 뒤에 있습니다. 전원은 USB-C로 늘 꽂아 두고, AI 처리는 Mac과 클라우드 API가 맡습니다.</p>
+        <p class="muted">가격은 2026-10-26에 국내 판매 페이지에서 확인했습니다. 배송비는 들어 있지 않습니다. 산 부품에 체크하면 남은 금액이 다시 계산되고, 체크는 이 브라우저에만 저장됩니다.</p>
+      </div>
+      <div class="legend">
+        <span><span class="tag ok">확인</span> 판매 페이지에서 본 가격</span>
+        <span><span class="tag est">추정</span> 판매 페이지로 확인하지 않은 값</span>
+        <span><span class="tag warn">주의</span> 사기 전에 볼 것</span>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/web/design-options__e-snow-bighead.jpg" alt="반짝이는 눈 질감에 머리가 몸통보다 큰 눈사람 로봇. 흰자와 검은자가 있는 두 눈, 짧은 당근 코, 나뭇가지 눈썹, 빨간 목도리, 몸통의 석탄 단추 3개" width="720" height="658">
+      <figcaption>선택한 외형: D(진짜 눈 질감) + 큰 머리. 생성 그림이라 실제 부품 배치는 반영하지 않았습니다.</figcaption>
+    </figure>
+  </header>
+
+  <section class="section" aria-labelledby="sum-h">
+    <h2 id="sum-h" class="sr-only" hidden>합계</h2>
+    <div class="totals">
+      <div class="total"><span class="label">1단계 전자부품</span><span class="value">약 69,500원</span><span class="note">9개 항목 · 대부분 확인된 가격</span></div>
+      <div class="total"><span class="label">2단계 기구·외형</span><span class="value">약 6~10만 원</span><span class="note">3D 출력 1회 기준 · 대부분 추정</span></div>
+      <div class="total main"><span class="label">시제품 1대 합계</span><span class="value">약 13~17만 원</span><span class="note">다시 출력할 때마다 3~6만 원 추가</span></div>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="progress-row">
+        <strong>구매 진행</strong>
+        <span class="muted"><span class="num" id="p-count">0 / 16</span>개 샀음</span>
+      </div>
+      <div class="bar"><span id="p-bar"></span></div>
+      <div class="progress-row">
+        <span>산 금액 <span class="num" id="p-spent">0원</span></span>
+        <span>남은 금액 <span class="num" id="p-left">130,790 ~ 170,790원</span></span>
+        <button class="reset" id="p-reset" type="button">체크 모두 지우기</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="order-h">
+    <div class="section-head">
+      <span class="eyebrow">사는 순서</span>
+      <h2 id="order-h">두 단계로 나눠 삽니다</h2>
+    </div>
+    <div class="stages">
+      <div class="stage">
+        <h3>1단계 · 전자부품</h3>
+        <span class="cost">약 7만 원 + 배송비</span>
+        <p>보드, 카메라, 앰프, 스피커, 서보 4개, 전원을 삽니다. 몸체 없이 책상 위 브레드보드에 선을 꽂아 <strong>말하기, 듣기, 카메라, 서보 움직임</strong>을 먼저 시험합니다. 납땜은 필요 없습니다.</p>
+      </div>
+      <div class="stage">
+        <h3>2단계 · 기구·외형</h3>
+        <span class="cost">약 6~10만 원 (출력 1회)</span>
+        <p>1단계 부품의 실제 크기를 재고 머리와 몸통을 3D로 설계합니다. 출력은 대행 업체에 맡기고, 베어링, 축, 나사, 무게추, 목도리를 더해 조립합니다.</p>
+      </div>
+    </div>
+    <div class="prose">
+      <p><strong>1단계를 먼저 하는 이유는 두 가지입니다.</strong> 부품을 직접 재야 머리 설계가 정확해집니다. 그리고 몸체에 돈을 쓰기 전에 대화가 자연스러운지(묻고 나서 대답이 나올 때까지 걸리는 시간)를 먼저 확인할 수 있습니다.</p>
+      <p class="muted">처음 추정(7.5~15.5만 원)보다 조금 높습니다. 출력 대행비, 배송비, 자잘한 부품이 실제로 더 듭니다.</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="s1-h">
+    <div class="section-head">
+      <span class="eyebrow">1단계</span>
+      <h2 id="s1-h">전자부품</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th class="check">샀음</th><th>부품</th><th class="r">수량</th><th>용도 · 위치</th><th>추천 제품 · 판매처</th><th class="r">단가</th><th class="r">소계</th></tr>
+        </thead>
+        <tbody>
+          <tr data-min="25520" data-max="25520">
+            <td class="check"><input type="checkbox" id="s1-xiao" aria-label="XIAO ESP32S3 Sense 샀음"></td>
+            <td><div class="part">XIAO ESP32S3 Sense</div><div class="spec">21 × 17.8 × 15mm</div></td>
+            <td class="r num">1</td>
+            <td>두뇌 보드 + 카메라 + 마이크. 머리 안, 한쪽 눈 바로 뒤</td>
+            <td>디바이스마트 <span class="tag warn">품절</span><br><span class="muted">대안: 쿠팡 · 브이씨텍</span></td>
+            <td class="r num">25,520</td><td class="r num">25,520 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="2200" data-max="2200">
+            <td class="check"><input type="checkbox" id="s1-amp" aria-label="MAX98357A 앰프 샀음"></td>
+            <td><div class="part">MAX98357A I2S 앰프</div><div class="spec">I2S 입력 · 3W급</div></td>
+            <td class="r num">1</td>
+            <td>보드가 내보내는 디지털 소리를 스피커가 낼 수 있는 신호로 키움</td>
+            <td>호환 모듈 (엘레파츠)<br><span class="muted">VAT 별도 2,000</span></td>
+            <td class="r num">2,200</td><td class="r num">2,200 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="1650" data-max="1650">
+            <td class="check"><input type="checkbox" id="s1-spk" aria-label="스피커 샀음"></td>
+            <td><div class="part">스피커 28mm</div><div class="spec">2W · 8Ω</div></td>
+            <td class="r num">1</td>
+            <td>목소리 출력. 몸통 앞, 석탄 단추 뒤</td>
+            <td>VLT-SK013 (디바이스마트)</td>
+            <td class="r num">1,650</td><td class="r num">1,650 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="9240" data-max="9240">
+            <td class="check"><input type="checkbox" id="s1-mg90" aria-label="MG90S 서보 2개 샀음"></td>
+            <td><div class="part">MG90S 메탈기어 서보</div><div class="spec">약 23 × 12 × 29mm</div></td>
+            <td class="r num">2</td>
+            <td>고개 좌우 회전(몸통 안), 끄덕임(머리 아래). 큰 머리 무게를 받음</td>
+            <td>SMG 호환품 (디바이스마트)</td>
+            <td class="r num">4,620</td><td class="r num">9,240 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="12760" data-max="12760">
+            <td class="check"><input type="checkbox" id="s1-sg51" aria-label="SG51R 서보 2개 샀음"></td>
+            <td><div class="part">SG51R 초소형 서보</div><div class="spec">5g급</div></td>
+            <td class="r num">2</td>
+            <td>눈꺼풀(양쪽을 한 모터로), 눈썹(양쪽을 한 모터로). 눈 위쪽</td>
+            <td>TowerPro 정품 (디바이스마트)</td>
+            <td class="r num">6,380</td><td class="r num">12,760 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="6050" data-max="6050">
+            <td class="check"><input type="checkbox" id="s1-usbc" aria-label="USB-C 전원 입력 보드 샀음"></td>
+            <td><div class="part">USB-C 전원 입력 보드</div><div class="spec">CC 5.1kΩ 필요</div></td>
+            <td class="r num">1</td>
+            <td>몸통 바닥에서 5V 전원을 받는 단자</td>
+            <td>SparkFun BOB-17110 (디바이스마트)</td>
+            <td class="r num">6,050</td><td class="r num">6,050 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="6050" data-max="6050">
+            <td class="check"><input type="checkbox" id="s1-adapter" aria-label="5V 3A 어댑터 샀음"></td>
+            <td><div class="part">5V 3A USB-C 어댑터</div><div class="spec">KC 인증</div></td>
+            <td class="r num">1</td>
+            <td>벽 콘센트 전원. 서보 4개가 한꺼번에 움직여도 버틸 여유</td>
+            <td>WT-5V3A-C (디바이스마트)</td>
+            <td class="r num">6,050</td><td class="r num">6,050 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="5000" data-max="5000">
+            <td class="check"><input type="checkbox" id="s1-bread" aria-label="브레드보드와 점퍼선 샀음"></td>
+            <td><div class="part">브레드보드 + 점퍼선</div><div class="spec">1세트</div></td>
+            <td class="r num">1</td>
+            <td>1단계 책상 위 시험 배선 (납땜 없이 꽂기만)</td>
+            <td class="muted">아무 곳</td>
+            <td class="r num">—</td><td class="r num">약 5,000 <span class="tag est">추정</span></td>
+          </tr>
+          <tr data-min="1000" data-max="1000">
+            <td class="check"><input type="checkbox" id="s1-diode" aria-label="다이오드와 콘덴서 샀음"></td>
+            <td><div class="part">쇼트키 다이오드 + 콘덴서</div><div class="spec">1000µF</div></td>
+            <td class="r num">각 1~2</td>
+            <td>다이오드: 보드 보호. 콘덴서: 서보가 갑자기 전류를 끌 때 전압이 떨어지지 않게 받쳐 줌</td>
+            <td class="muted">아무 곳</td>
+            <td class="r num">—</td><td class="r num">약 1,000 <span class="tag est">추정</span></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td></td><td colspan="5">1단계 합계</td><td class="r num">약 69,500</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="notes">
+      <details>
+        <summary>XIAO ESP32S3 Sense를 고른 이유와 다른 판매처</summary>
+        <ul>
+          <li>카메라와 마이크가 이미 붙어 있고, 확장보드까지 합쳐 21 × 17.8 × 15mm로 작아서 눈 바로 뒤에 들어갑니다.</li>
+          <li>디바이스마트는 지금 품절이고 재고를 다시 들이는 중입니다.</li>
+          <li>쿠팡 28,870원 (해외배송, 약 2주) · 브이씨텍 28,500원 (VAT 별도) · IC뱅큐 22,000원 (해외재고, 최대 8주)</li>
+          <li>사진 찍는 순간 전류가 약 347mA까지 올라갑니다(Seeed 문서). 5V 3A 어댑터로 충분합니다.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>고개 서보는 왜 메탈기어 MG90S인가</summary>
+        <ul>
+          <li>큰 머리를 돌리고 끄덕이므로, 플라스틱 기어인 SG90보다 튼튼한 메탈기어를 씁니다.</li>
+          <li>고개 좌우는 ±90도(모두 180도)만 돌립니다. 360도로 돌리면 위치를 알 수 없고 선이 꼬여서 돌아가는 접점(슬립링)이 따로 필요합니다.</li>
+          <li>더 싼 호환품: IC뱅큐 3,410원, 쿠팡 3,200원.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>눈꺼풀·눈썹 서보는 왜 SG51R인가</summary>
+        <ul>
+          <li>눈꺼풀과 눈썹은 가볍지만 눈 주변 공간이 좁아서 5g급 초소형을 씁니다.</li>
+          <li>눈썹은 회전만 합니다. 서보가 머리 안의 세로 막대를 올리면 눈썹 안쪽 끝이 올라가서 슬픈 얼굴이 되고, 내리면 안쪽 끝이 내려가서 화난 얼굴이 됩니다. 움직이는 범위는 ±20~25도입니다.</li>
+          <li>대안: Feetech FS0307 4,730원 (디바이스마트, 무게 미확인), EMAX ES9051 4.3g 13,200원 (디바이스마트).</li>
+          <li><strong>"저소음"이라고 내세운 초소형 서보는 찾지 못했습니다.</strong> 조용한 책상에서 소리가 거슬리는지는 실물을 받아 들어 보고 판단합니다.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>USB-C 전원 보드에서 챙길 것</summary>
+        <ul>
+          <li>USB-C 충전기는 보드에 5.1kΩ 저항(CC 저항)이 있어야 5V를 보내 줍니다. 이 저항이 없으면 충전기를 꽂아도 전기가 나오지 않습니다.</li>
+          <li>SparkFun 판매 페이지에는 "CC 풀다운 저항 내장"이라고만 적혀 있고 저항값은 없습니다.</li>
+          <li>쿠팡 500원짜리 보드는 "5.1K 저항 포함"이 적혀 있습니다(배송비 3,000원).</li>
+        </ul>
+      </details>
+      <details>
+        <summary>앰프를 어디서 살까</summary>
+        <ul>
+          <li>엘레파츠 호환 모듈이 2,200원으로 가장 쌉니다.</li>
+          <li>디바이스마트 한 곳에서 다 사려면 Adafruit 3006(11,880원, 해외 2주)을 고르게 됩니다. 배송비를 한 번만 내는 대신 앰프 값이 오릅니다.</li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="callout">
+      <h3>꼭 확인할 것: 어떤 카메라가 오는가</h3>
+      <ul>
+        <li>Seeed 공식 문서(2026-10-26 확인)에는 지금 <strong>OV5640(자동초점)</strong>을 넣어 판다고 적혀 있습니다.</li>
+        <li>국내 판매 페이지에는 <strong>OV2640</strong>이라고 적힌 곳이 많고, 에듀이노는 "OV2640 또는 OV3660이 섞여서 배송된다"고 적었습니다. 어떤 카메라가 올지는 재고에 따라 다릅니다.</li>
+        <li>셋 다 이 보드에서 쓸 수 있으므로 SnowBot은 어느 것이 와도 됩니다.</li>
+        <li><strong>OV5640이 오면 열을 챙깁니다.</strong> 방열판이 같이 들어 있고 판매 페이지에 "화상 주의" 문구가 있습니다. 닫힌 머리 안에 넣으려면 열이 빠질 구멍을 냅니다. 목도리 선 아래, 머리 뒤, 나뭇가지 꼭지 둘레처럼 눈에 띄지 않는 곳에 둡니다.</li>
+        <li>카메라와 보드를 잇는 납작한 케이블(FPC)의 길이는 공식 자료에 없습니다. <strong>이 길이가 머리 안에서 보드를 어디에 둘지 정하므로</strong>, 받으면 바로 재서 기록합니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="s2-h">
+    <div class="section-head">
+      <span class="eyebrow">2단계</span>
+      <h2 id="s2-h">기구·외형</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th class="check">샀음</th><th>부품</th><th class="r">수량</th><th>용도</th><th>추천 · 판매처</th><th class="r">비용</th></tr>
+        </thead>
+        <tbody>
+          <tr data-min="30000" data-max="60000">
+            <td class="check"><input type="checkbox" id="s2-print" aria-label="3D 출력 주문함"></td>
+            <td><div class="part">3D 출력</div><div class="spec">머리·몸통·눈·눈꺼풀·눈썹·코·내부 틀</div></td>
+            <td class="r num">1회</td>
+            <td>외형과 움직이는 기구 전부</td>
+            <td>출력 대행 (아래 표)</td>
+            <td class="r num">약 30,000~60,000 <span class="tag est">추정</span></td>
+          </tr>
+          <tr data-min="1320" data-max="1320">
+            <td class="check"><input type="checkbox" id="s2-bearing" aria-label="베어링 샀음"></td>
+            <td><div class="part">베어링 6800ZZ</div><div class="spec">10 × 19 × 5mm</div></td>
+            <td class="r num">1</td>
+            <td>고개 회전판. 머리 무게를 서보 축 대신 받침</td>
+            <td>디바이스마트 (중국산)</td>
+            <td class="r num">1,320 <span class="tag ok">확인</span></td>
+          </tr>
+          <tr data-min="5000" data-max="5000">
+            <td class="check"><input type="checkbox" id="s2-rod" aria-label="황동봉과 피아노선 샀음"></td>
+            <td><div class="part">황동봉 · 피아노선</div><div class="spec">2mm · 1mm</div></td>
+            <td class="r num">조금</td>
+            <td>눈썹 축, 눈꺼풀·눈썹을 서보에 잇는 연결 막대</td>
+            <td class="muted">—</td>
+            <td class="r num">약 5,000 <span class="tag est">추정</span></td>
+          </tr>
+          <tr data-min="5000" data-max="10000">
+            <td class="check"><input type="checkbox" id="s2-screws" aria-label="나사와 인서트 샀음"></td>
+            <td><div class="part">M2 나사·너트, 열압입 인서트</div><div class="spec">1세트</div></td>
+            <td class="r num">1</td>
+            <td>출력물 조립. 인서트는 플라스틱에 열로 박아 넣는 금속 나사산</td>
+            <td class="muted">—</td>
+            <td class="r num">약 5,000~10,000 <span class="tag est">추정</span></td>
+          </tr>
+          <tr data-min="10000" data-max="10000">
+            <td class="check"><input type="checkbox" id="s2-wire" aria-label="전선과 커넥터 샀음"></td>
+            <td><div class="part">실리콘 전선, 수축튜브, JST 커넥터</div><div class="spec">26AWG</div></td>
+            <td class="r num">조금</td>
+            <td>머리와 몸통 사이 배선(목 통과). 실리콘 전선은 잘 휘어서 고개를 돌려도 버팀</td>
+            <td class="muted">—</td>
+            <td class="r num">약 10,000 <span class="tag est">추정</span></td>
+          </tr>
+          <tr data-min="5000" data-max="5000">
+            <td class="check"><input type="checkbox" id="s2-weight" aria-label="무게추 샀음"></td>
+            <td><div class="part">무게추</div><div class="spec">쇠구슬·봉돌 100~200g</div></td>
+            <td class="r num">1</td>
+            <td>몸통 바닥. 머리가 커서 앞으로 넘어지지 않게</td>
+            <td class="muted">—</td>
+            <td class="r num">약 5,000 <span class="tag est">추정</span></td>
+          </tr>
+          <tr data-min="5000" data-max="10000">
+            <td class="check"><input type="checkbox" id="s2-scarf" aria-label="목도리 샀음"></td>
+            <td><div class="part">니트 목도리</div><div class="spec">빨강</div></td>
+            <td class="r num">1</td>
+            <td>탈착 액세서리. 머리와 몸통 사이 회전 틈도 가려 줌</td>
+            <td class="muted">인형용 목도리 또는 직접 뜨기</td>
+            <td class="r num">약 5,000~10,000 <span class="tag est">추정</span></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td></td><td colspan="4">2단계 합계</td><td class="r num">약 6~10만 원</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>3D 출력 대행 업체</h3>
+        <div class="table-scroll" style="border:0">
+          <table style="min-width:0">
+            <thead><tr><th>업체</th><th>가격 방식 (PLA)</th></tr></thead>
+            <tbody>
+              <tr><td><strong>3DFARM</strong></td><td>주문당 기본료 5,000원 + 출력비 + 배송비. 예: 10cm³ 16,000원, 50cm³ 25,000원</td></tr>
+              <tr><td><strong>와우쓰리디</strong></td><td>부피 × 소재 단가 + 장비 시간 + 작업비. 소형 부품 최소 22,000원</td></tr>
+              <tr><td><strong>아이컨택</strong></td><td>3D 파일을 올리면 바로 견적. 6,600원부터, 6~9영업일</td></tr>
+              <tr><td><strong>크몽 메이크잇</strong></td><td>10g당 1,500원 (층 두께 0.2mm), 배송 포함</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>출력량과 질감</h3>
+        <ul class="bullets">
+          <li><strong>출력량:</strong> 머리(지름 약 9cm)와 몸통(약 8cm)을 두께 2mm 껍데기로 출력하면 약 90cm³(110g 안팎)입니다. 눈, 눈꺼풀, 코, 내부 틀을 더하면 150~200g입니다.</li>
+          <li><strong>예상 비용:</strong> 크몽 기준 약 2.5~3만 원, 3DFARM 기준 약 4~5만 원. 설계 전에 계산한 값이고, 실제 견적은 3D 파일로 받습니다.</li>
+          <li><strong>질감 설정:</strong> 표면을 눈 뭉치처럼 오돌토돌하게 만드는 "퍼지 스킨" 설정은 네 곳 모두 안내가 없습니다. 주문 전에 물어봅니다. 눈꺼풀, 목 이음새, 눈썹 축 주변은 매끈하게 남깁니다.</li>
+          <li><strong>반짝이 흰색 재료:</strong> 국내 재고를 찾지 못했습니다(쿠팡 해외배송 1kg 29,370원). 업체가 가진 흰색으로 먼저 출력하고 반짝임은 나중에 정합니다.</li>
+          <li>본체를 출력하기 전에 지름 5cm 정도의 시험용 공을 설정별로 몇 개 뽑아 질감을 비교합니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="wire-h">
+    <div class="section-head">
+      <span class="eyebrow">설계 제안</span>
+      <h2 id="wire-h">배선과 전원</h2>
+    </div>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  AD["5V 3A 어댑터"] --> UC["USB-C 전원 보드 (몸통 바닥)"]
+  UC --> R["5V 선"]
+  R --> PAN["MG90S 고개 좌우 (몸통)"]
+  R -->|"목을 지나는 선"| HEAD["머리 안"]
+  HEAD --> X["XIAO ESP32S3 Sense (다이오드 거쳐 5V 핀)"]
+  HEAD --> NOD["MG90S 끄덕임"]
+  HEAD --> LID["SG51R 눈꺼풀"]
+  HEAD --> BROW["SG51R 눈썹"]
+  HEAD --> AMP["MAX98357A 앰프"]
+  AMP -->|"목을 지나는 선"| SPK["스피커 (몸통 앞)"]
+</pre>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <h3>목을 지나는 선 5가닥</h3>
+        <div class="chips">
+          <span class="chip power">5V</span><span class="chip power">GND</span>
+          <span class="chip">고개 좌우 서보 신호</span><span class="chip">스피커 +</span><span class="chip">스피커 −</span>
+        </div>
+        <p class="muted">고개는 좌우 180도만 돌기 때문에, 선을 둥글게 여유 있게 두면 꼬이지 않습니다.</p>
+      </div>
+      <div class="panel">
+        <h3>보드 핀 11개 중 7개 사용</h3>
+        <div class="pins" aria-label="핀 11개 중 서보 4개, 앰프 3개 사용, 4개 남음">
+          <span class="pin servo">서보</span><span class="pin servo">서보</span><span class="pin servo">서보</span><span class="pin servo">서보</span>
+          <span class="pin amp">BCLK</span><span class="pin amp">LRC</span><span class="pin amp">DIN</span>
+          <span class="pin free">여유</span><span class="pin free">여유</span><span class="pin free">여유</span><span class="pin free">여유</span>
+        </div>
+        <div class="pin-legend"><span>서보 4개</span><span>앰프 3개</span><span>남는 핀 4개</span></div>
+        <p class="muted">서보를 따로 제어하는 보드는 필요 없습니다. SD 카드는 D8~D10 핀과 겹쳐서 쓰지 않습니다. 어느 핀에 무엇을 꽂을지는 회로를 짤 때 정합니다.</p>
+      </div>
+    </div>
+    <ul class="bullets">
+      <li><strong>보드 전원:</strong> Seeed 문서는 외부 전원을 5V 핀에 넣을 때 다이오드를 거치라고 합니다. 그래야 보드의 USB-C와 외부 전원을 동시에 꽂아도 전기가 서로 부딪히지 않습니다.</li>
+      <li><strong>서보 전원:</strong> 서보 4개가 한꺼번에 움직이면 순간적으로 전류를 많이 씁니다. 이때 전압이 떨어지면 보드가 다시 켜질 수 있어서, 서보 근처에 1000µF 콘덴서를 답니다.</li>
+      <li><strong>프로그램 올리기:</strong> 조립하면 보드의 USB-C가 머리 안에 숨습니다. 그래서 Wi-Fi로 프로그램을 올리는 기능(OTA)을 처음부터 넣습니다.</li>
+      <li><strong>자기 목소리:</strong> 마이크는 머리 안 보드에, 스피커는 바로 아래 몸통에 있어서 로봇이 말할 때 자기 목소리를 듣습니다. 처음에는 "말하는 동안은 듣지 않기"로 처리합니다. 사람이 말을 끊고 들어오는 기능이 필요해지면 나중에 되울림 제거(AEC)를 넣습니다.</li>
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="fit-h">
+    <div class="section-head">
+      <span class="eyebrow">대략 확인</span>
+      <h2 id="fit-h">머리 안에 들어가나</h2>
+    </div>
+    <div class="table-scroll">
+      <table style="min-width:560px">
+        <thead><tr><th>부품</th><th>크기</th><th>위치</th></tr></thead>
+        <tbody>
+          <tr><td><strong>XIAO + Sense 확장보드</strong></td><td class="num">21 × 17.8 × 15mm <span class="tag ok">Seeed 공식</span></td><td>한쪽 눈 바로 뒤. 카메라 렌즈가 검은자 한가운데</td></tr>
+          <tr><td><strong>MG90S (끄덕임)</strong></td><td class="num">약 23 × 12 × 29mm <span class="tag est">판매처마다 다름</span></td><td>머리 아래쪽, 목 회전판 위</td></tr>
+          <tr><td><strong>SG51R × 2</strong></td><td>5g급 초소형 <span class="tag est">실물로 확인</span></td><td>눈 위쪽, 눈꺼풀·눈썹 기구 옆</td></tr>
+          <tr><td><strong>MAX98357A</strong></td><td>작은 모듈</td><td>남는 공간</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose">머리가 지름 약 9cm로 커서 부품은 들어갑니다. <strong>어려운 곳은 눈 주변입니다.</strong> 카메라, 눈꺼풀 기구, 눈썹 기구가 모두 눈 근처에 모이므로, 1단계에서 실물 치수를 잰 뒤 3D 설계에서 앞뒤 깊이를 나눠 배치합니다.</p>
+  </section>
+
+  <section class="section" aria-labelledby="decide-h">
+    <div class="section-head">
+      <span class="eyebrow">사기 전에</span>
+      <h2 id="decide-h">정해야 할 것</h2>
+    </div>
+    <div class="decide">
+      <div class="panel">
+        <h3>공구가 있나요?</h3>
+        <p class="muted">1단계는 브레드보드라 납땜 없이 됩니다. 몸체에 넣을 때는 납땜이 필요합니다. 없는 공구는 목록에 더하겠습니다.</p>
+        <ul class="tools">
+          <li><label><input type="checkbox" id="t-iron"> 납땜인두 <span class="muted">· 2단계 배선</span></label></li>
+          <li><label><input type="checkbox" id="t-nipper"> 니퍼 <span class="muted">· 전선 자르기</span></label></li>
+          <li><label><input type="checkbox" id="t-driver"> 작은 드라이버 <span class="muted">· 서보 나사, M2 나사</span></label></li>
+          <li><label><input type="checkbox" id="t-glue"> 글루건 <span class="muted">· 선 고정</span></label></li>
+          <li><label><input type="checkbox" id="t-meter"> 멀티미터 <span class="muted">· 전압 재기</span></label></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>어디서 한꺼번에 살까요?</h3>
+        <ul class="bullets">
+          <li><strong>디바이스마트 한 곳:</strong> 서보, 스피커, 전원 보드, 어댑터, 베어링이 모두 있습니다. 배송비를 한 번만 냅니다.</li>
+          <li><strong>보드 품절:</strong> XIAO 보드가 다시 들어오지 않으면 보드만 쿠팡이나 브이씨텍에서 따로 삽니다. 쿠팡 해외배송은 약 2주가 걸립니다.</li>
+          <li><strong>앰프:</strong> 엘레파츠에서 2,200원에 따로 살지, 디바이스마트에서 11,880원짜리로 맞출지 정합니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="next" aria-labelledby="next-h">
+    <span class="eyebrow" style="color:inherit;opacity:.75">다음 할 일</span>
+    <h2 id="next-h">AI API 고르기</h2>
+    <p>말을 글로 바꾸기(STT), 대답 만들기(LLM), 글을 목소리로 바꾸기(TTS)에 쓸 서비스를 고릅니다. 묻고 나서 대답이 들릴 때까지 걸리는 시간을 재서 정합니다. 1단계 부품이 오기 전에 정해 두면, 도착하자마자 대화를 시험할 수 있습니다.</p>
+  </section>
+
+  <footer>
+    <span>가격 출처: 디바이스마트, 엘레파츠, 쿠팡, 브이씨텍, IC뱅큐, 에듀이노 판매 페이지 (2026-10-26). 보드 사양: Seeed Studio 위키 (2026-10-26).</span>
+    <span>프로젝트 문서: snowbot/docs/03-parts-list.md. 이 페이지와 문서가 다르면 문서가 맞습니다.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var KEY = "snowbot-parts-v1";
+  var rows = Array.prototype.slice.call(document.querySelectorAll("tr[data-min]"));
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[type="checkbox"]'));
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { saved = {}; }
+  boxes.forEach(function (b) { if (saved[b.id]) b.checked = true; });
+
+  function won(n) { return n.toLocaleString("ko-KR") + "원"; }
+  function range(a, b) { return a === b ? won(a) : a.toLocaleString("ko-KR") + " ~ " + won(b); }
+
+  function update() {
+    var done = 0, spentMin = 0, spentMax = 0, leftMin = 0, leftMax = 0;
+    rows.forEach(function (r) {
+      var cb = r.querySelector("input");
+      var mn = +r.dataset.min, mx = +r.dataset.max;
+      r.classList.toggle("done", cb.checked);
+      if (cb.checked) { done++; spentMin += mn; spentMax += mx; }
+      else { leftMin += mn; leftMax += mx; }
+    });
+    document.getElementById("p-count").textContent = done + " / " + rows.length;
+    document.getElementById("p-bar").style.width = (done / rows.length * 100) + "%";
+    document.getElementById("p-spent").textContent = range(spentMin, spentMax);
+    document.getElementById("p-left").textContent = range(leftMin, leftMax);
+  }
+  function save() {
+    var s = {};
+    boxes.forEach(function (b) { if (b.checked) s[b.id] = 1; });
+    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", function () { save(); update(); }); });
+  document.getElementById("p-reset").addEventListener("click", function () {
+    boxes.forEach(function (b) { b.checked = false; });
+    save(); update();
+  });
+  update();
+})();
+</script>

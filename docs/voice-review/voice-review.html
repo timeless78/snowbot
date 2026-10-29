@@ -1,0 +1,387 @@
+<title>스노봇 목소리 고르기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 위에 문장 고르기 띠(고정), 아래에 목소리 카드 격자. 색은 눈(얼음빛) + 당근 코 주황 하나 */
+:root {
+  --bg: #eef3f7; --surface: #ffffff; --ink: #1c2833; --muted: #5a6977; --line: #d6e0e8;
+  --carrot: #e2601a; --carrot-soft: #fde9dc; --on-carrot: #ffffff;
+  --like: #1d7f55; --like-soft: #dcf2e7; --maybe: #9a6a12; --maybe-soft: #f8edd3; --no: #a8413a; --no-soft: #f8e0dd;
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e151c; --surface: #16202a; --ink: #e4ebf1; --muted: #93a3b2; --line: #283543;
+  --carrot: #f0884a; --carrot-soft: #3a2416; --on-carrot: #1a0e06;
+  --like: #5cc896; --like-soft: #143327; --maybe: #e0b45a; --maybe-soft: #3a2e14; --no: #ec8b83; --no-soft: #3c1d1a;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e151c; --surface: #16202a; --ink: #e4ebf1; --muted: #93a3b2; --line: #283543;
+  --carrot: #f0884a; --carrot-soft: #3a2416; --on-carrot: #1a0e06;
+  --like: #5cc896; --like-soft: #143327; --maybe: #e0b45a; --maybe-soft: #3a2e14; --no: #ec8b83; --no-soft: #3c1d1a;
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; display: grid; gap: 22px; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 .nose { color: var(--carrot); }
+.lead { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.status { font-size: 13px; }
+.status.ok { color: var(--like); } .status.warn { color: var(--maybe); }
+
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.lines { display: flex; flex-wrap: wrap; gap: 8px; }
+.line-btn { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.line-btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.line-text { font-family: var(--font-display); font-size: clamp(19px, 3.2vw, 24px); line-height: 1.35; margin: 0; text-wrap: balance; }
+.bar-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-weight: 600; font-size: 14px; border-radius: 10px; padding: 8px 14px; cursor: pointer; border: 1px solid transparent; }
+.btn.primary { background: var(--carrot); color: var(--on-carrot); }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: default; }
+.hint { font-size: 13px; color: var(--muted); }
+
+.suzu { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+.table-scroll { overflow-x: auto; }
+.suzu-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 760px; font-size: 14px; }
+.suzu-table th, .suzu-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; text-align: center; }
+.suzu-table th:first-child, .suzu-table td:first-child { text-align: left; width: 34%; }
+.suzu-table thead th { vertical-align: top; }
+.m-name { font-weight: 600; display: block; }
+.m-kind { font-size: 12px; color: var(--muted); display: block; font-variant-numeric: tabular-nums; }
+.m-kind.fast { color: var(--like); } .m-kind.slow { color: var(--maybe); }
+.suzu-table .rate { grid-template-columns: 1fr; gap: 4px; margin-top: 6px; }
+.suzu-table .rate button { font-size: 12px; padding: 4px 2px; }
+.suzu-table td .play { width: 100%; }
+.row-label { display: block; font-size: 12px; color: var(--muted); }
+.row-text { display: block; }
+.row-all { font: inherit; font-size: 12px; margin-top: 4px; padding: 3px 8px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.groups { display: grid; gap: 30px; }
+.group { display: grid; gap: 10px; }
+.group-title { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0; }
+.group-desc { margin: 0; color: var(--muted); font-size: 14px; max-width: 70ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; min-width: 0; transition: border-color .15s, box-shadow .15s; }
+.card.playing { border-color: var(--carrot); box-shadow: 0 0 0 3px var(--carrot-soft); }
+.card.r-like { border-left: 5px solid var(--like); } .card.r-maybe { border-left: 5px solid var(--maybe); } .card.r-no { border-left: 5px solid var(--no); opacity: .78; }
+.card-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.name { font-family: var(--font-display); font-size: 22px; margin: 0; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.tag { font-size: 11px; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.feel { margin: 0; color: var(--muted); font-size: 14px; }
+.plays { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.play { font: inherit; font-size: 13px; padding: 8px 6px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; display: flex; justify-content: center; gap: 6px; align-items: center; }
+.play.current { border-color: var(--carrot); color: var(--carrot); font-weight: 600; }
+.play.on { background: var(--carrot); color: var(--on-carrot); border-color: var(--carrot); }
+.rate { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rate button { font: inherit; font-size: 14px; padding: 7px 4px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+.rate button[aria-pressed="true"][data-r="like"] { background: var(--like-soft); color: var(--like); border-color: var(--like); font-weight: 600; }
+.rate button[aria-pressed="true"][data-r="maybe"] { background: var(--maybe-soft); color: var(--maybe); border-color: var(--maybe); font-weight: 600; }
+.rate button[aria-pressed="true"][data-r="no"] { background: var(--no-soft); color: var(--no); border-color: var(--no); font-weight: 600; }
+.rate button:disabled { cursor: default; opacity: .6; }
+textarea { font: inherit; font-size: 14px; width: 100%; min-height: 54px; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); color: var(--ink); }
+.vid { font-size: 11px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; overflow-wrap: anywhere; }
+button:focus-visible, textarea:focus-visible { outline: 3px solid var(--carrot); outline-offset: 2px; }
+.foot { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>스노봇 목소리 고르기<span class="nose">.</span></h1>
+    <p class="lead">한국어 원어 목소리 중에는 아이·캐릭터 목소리가 거의 없어서, 2차로 <b>캐릭터 목소리</b>와 <b>음을 높인 한국어 목소리</b>를 더했습니다. 문장을 고르고 <b>연달아 듣기</b>로 비교한 뒤 좋아요·보류·별로를 눌러 주세요.</p>
+  </header>
+
+  <div class="meta">
+    <span>좋아요 <b id="c-like">0</b></span><span>보류 <b id="c-maybe">0</b></span><span>별로 <b id="c-no">0</b></span><span>안 들은 후보 <b id="c-none">19</b></span>
+    <span class="status" id="save-status">저장 연결 중…</span>
+  </div>
+
+  <section class="suzu" aria-labelledby="suzu-title">
+    <h2 class="group-title" id="suzu-title">Suzu · 모델 비교</h2>
+    <p class="group-desc">스노봇 목소리로 정한 Suzu 를 모델 5개로 읽었습니다. 첫 소리 시간은 서버에서 잰 값(6문장 중간값)입니다. 대화에는 0.3초 안쪽이 좋고, 고급 모델은 억양이 더 자연스러울 수 있지만 그만큼 늦습니다. 모델마다 좋아요·보류·별로를 눌러 주세요.</p>
+    <div class="table-scroll"><table class="suzu-table" id="suzu-table"></table></div>
+  </section>
+
+  <section class="bar" aria-label="문장 고르기">
+    <div class="lines" id="lines"></div>
+    <p class="line-text" id="line-text"></p>
+    <div class="bar-actions">
+      <button class="btn primary" id="play-all" type="button">▶ 이 문장 2차 후보 연달아 듣기</button>
+      <button class="btn ghost" id="stop" type="button" disabled>■ 멈추기</button>
+      <span class="hint" id="now-playing"></span>
+    </div>
+  </section>
+
+  <div id="groups" class="groups" aria-label="목소리 후보"></div>
+
+  <footer class="foot">
+    <span>소리: ElevenLabs Flash v2.5 (실제 대화에 쓸 빠른 모델), 2026-10-27 생성. 같은 목소리도 고급 모델에서는 더 자연스러울 수 있습니다.</span>
+    <span>사용 수는 공유 라이브러리에서 다른 사람이 가져다 쓴 횟수입니다.</span>
+  </footer>
+</div>
+
+<script>
+const LINES = [
+  { label: "인사", text: "안녕! 나는 스노봇이야. 오늘도 같이 있어 줄게." },
+  { label: "휴식 제안", text: "조금 쉬어갈까요? 다음 쉼터는 12킬로미터 뒤예요." },
+  { label: "주차 위치", text: "주차 위치 기억해 뒀어요. 지하 3층, C 구역 12번이에요." },
+];
+const GROUPS = [
+  { key: "r2a", title: "2차 · 캐릭터 목소리", desc: "아이·애니메이션 캐릭터 목소리입니다. 원래 다른 나라 말 목소리가 한국어를 읽어서 억양이 어색할 수 있습니다." },
+  { key: "r2b", title: "2차 · 높인 목소리", desc: "1차의 한국어 목소리를 음 높이만 4반음 올렸습니다. 말 빠르기는 그대로입니다. 서버에서 바로 바꿀 수 있습니다." },
+  { key: "r1", title: "1차 후보", desc: "지난번 후보입니다. 비교용으로 남겨 둡니다." },
+];
+const VOICES = [
+  { group: "r2a", id: "EeQEodFZVtBkjtgK3HBc", name: "Piku", feel: "표현이 큰 여자아이 캐릭터", tags: ["아이", "공유 12,490"] },
+  { group: "r2a", id: "rBkiq5ZQ43ogwd6i4uIQ", name: "Peanut", feel: "아주 작은 요정·생물 캐릭터, 중성", tags: ["작은 캐릭터", "공유 4,307"] },
+  { group: "r2a", id: "e3FEEanj39p8QCSMe8iV", name: "Gudiya", feel: "호기심 많은 순수한 아이", tags: ["아이", "공유 3,598"] },
+  { group: "r2a", id: "OSwaPSNdfituxkWcjlkR", name: "Kano", feel: "밝고 힘찬 애니메이션 소녀", tags: ["애니", "공유 25,047"] },
+  { group: "r2a", id: "6awt6FKyZGV0HyQEwisX", name: "Suzu", feel: "맑고 차분한 애니메이션 10대", tags: ["애니", "공유 15,637"] },
+  { group: "r2a", id: "XKJWAGK4dewYkzr1hsNs", name: "Kei", feel: "가볍고 중성적인 애니메이션 톤", tags: ["중성", "공유 305"] },
+  { group: "r2a", id: "2HDQZbLZn0MJCgru92h7", name: "Knurps", feel: "말 빠른 장난꾸러기 다람쥐", tags: ["만화", "공유 3,977"] },
+  { group: "r2b", id: "O2KReOFLpoR65nz6C9Se-hi", name: "Aria ↑", feel: "Aria 를 4반음 높임", tags: ["한국어", "변조"] },
+  { group: "r2b", id: "vJ170fCwESgE1tjW39So-hi", name: "Sena ↑", feel: "Sena 를 4반음 높임", tags: ["한국어", "변조"] },
+  { group: "r2b", id: "Lb7qkOn5hF8p7qfCDH8q-hi", name: "Annie ↑", feel: "Annie 를 4반음 높임", tags: ["한국어", "변조"] },
+  { group: "r2b", id: "JpGoUJuLFthrFkcdBy4k-hi", name: "Sora K ↑", feel: "Sora K 를 4반음 높임", tags: ["한국어", "변조"] },
+  { group: "r1", id: "O2KReOFLpoR65nz6C9Se", name: "Aria", feel: "밝고 귀여운 젊은 여성, 대화용", tags: ["여성", "공유 189"] },
+  { group: "r1", id: "vJ170fCwESgE1tjW39So", name: "Sena", feel: "밝고 귀여움, 애니메이션·게임용", tags: ["여성", "공유 509"] },
+  { group: "r1", id: "Lb7qkOn5hF8p7qfCDH8q", name: "Annie", feel: "부드럽고 사랑스러움", tags: ["여성", "공유 17,255"] },
+  { group: "r1", id: "pB7oWYX9EdaK4jiH8N3J", name: "OnaDot", feel: "귀여운 여성", tags: ["여성", "공유 280"] },
+  { group: "r1", id: "JpGoUJuLFthrFkcdBy4k", name: "Sora K", feel: "맑고 친근한 젊은 여성", tags: ["여성", "내 계정"] },
+  { group: "r1", id: "IAETYMYM3nJvjnlkVTKI", name: "Deoksu", feel: "통통하고 귀여운 남성 캐릭터", tags: ["남성", "공유 8,054"] },
+  { group: "r1", id: "dnZGOA54w68T7vLLPFTp", name: "Klamon", feel: "밝고 따뜻한 젊은 남성", tags: ["남성", "공유 871"] },
+  { group: "r1", id: "Ir7oQcBXWiq4oFGROCfj", name: "Taemin", feel: "따뜻하고 차분한 20대 남성", tags: ["남성", "내 계정"] },
+];
+function groupGrid(key) {
+  let grid = document.getElementById(`grid-${key}`);
+  if (!grid) {
+    const g = GROUPS.find((x) => x.key === key);
+    const sec = document.createElement("section");
+    sec.className = "group";
+    const h = document.createElement("h2"); h.className = "group-title"; h.textContent = g.title;
+    const p = document.createElement("p"); p.className = "group-desc"; p.textContent = g.desc;
+    grid = document.createElement("div"); grid.className = "grid"; grid.id = `grid-${key}`;
+    sec.append(h, p, grid);
+    $("groups").append(sec);
+  }
+  return grid;
+}
+const RATES = [["like", "좋아요"], ["maybe", "보류"], ["no", "별로"]];
+const LS_KEY = "snowbot-voice-picks";
+
+let line = 0;
+let picks = {};            // id -> {rating, note}
+let db = null;             // claude db 또는 null
+let canWrite = true;
+const audio = new Audio();
+let queue = null;          // 연달아 듣기 중이면 남은 목소리 id 목록
+let playingKey = null;     // "id_line"
+
+const $ = (id) => document.getElementById(id);
+const src = (id, n) => `audio/${id}_${n + 1}.mp3`;
+
+function loadLocal() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } }
+function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(picks)); } catch {} }
+
+function renderLines() {
+  const box = $("lines"); box.textContent = "";
+  LINES.forEach((l, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "line-btn"; b.id = `line-${i}`;
+    b.textContent = `${i + 1}. ${l.label}`;
+    b.setAttribute("aria-pressed", String(i === line));
+    b.onclick = () => { line = i; renderLines(); renderCards(); };
+    box.append(b);
+  });
+  $("line-text").textContent = `“${LINES[line].text}”`;
+}
+
+function renderCards() {
+  VOICES.forEach((v) => {
+    let card = document.getElementById(`card-${v.id}`);
+    if (!card) {
+      card = document.createElement("article");
+      card.className = "card"; card.id = `card-${v.id}`;
+      card.innerHTML = `
+        <div class="card-head"><h3 class="name"></h3><div class="tags"></div></div>
+        <p class="feel"></p>
+        <div class="plays"></div>
+        <div class="rate" role="group" aria-label="평가"></div>
+        <textarea id="note-${v.id}" placeholder="메모 (예: 너무 어른스러움, 2번 문장이 좋음)"></textarea>
+        <span class="vid"></span>`;
+      card.querySelector(".name").textContent = v.name;
+      v.tags.forEach((t) => { const s = document.createElement("span"); s.className = "tag"; s.textContent = t; card.querySelector(".tags").append(s); });
+      card.querySelector(".feel").textContent = v.feel;
+      card.querySelector(".vid").textContent = v.id;
+      LINES.forEach((l, i) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "play"; b.dataset.n = i;
+        b.setAttribute("aria-label", `${v.name} ${i + 1}번 문장 듣기`);
+        b.textContent = `▶ ${i + 1}`;
+        b.onclick = () => { stopQueue(); play(v.id, i); };
+        card.querySelector(".plays").append(b);
+      });
+      RATES.forEach(([r, label]) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.r = r; b.textContent = label;
+        b.onclick = () => setRating(v.id, picks[v.id]?.rating === r ? null : r);
+        card.querySelector(".rate").append(b);
+      });
+      const ta = card.querySelector("textarea");
+      let t = null;
+      ta.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => setNote(v.id, ta.value), 800); });
+      ta.addEventListener("blur", () => { clearTimeout(t); setNote(v.id, ta.value); });
+      groupGrid(v.group).append(card);
+    }
+    const p = picks[v.id] || {};
+    card.className = "card" + (p.rating ? ` r-${p.rating}` : "") + (playingKey?.startsWith(v.id) ? " playing" : "");
+    card.querySelectorAll(".play").forEach((b) => {
+      const n = Number(b.dataset.n);
+      b.classList.toggle("current", n === line);
+      b.classList.toggle("on", playingKey === `${v.id}_${n}`);
+    });
+    card.querySelectorAll(".rate button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(p.rating === b.dataset.r));
+      b.disabled = !canWrite;
+    });
+    const ta = card.querySelector("textarea");
+    ta.disabled = !canWrite;
+    if (document.activeElement !== ta && ta.value !== (p.note || "")) ta.value = p.note || "";
+  });
+  const count = { like: 0, maybe: 0, no: 0 };
+  VOICES.forEach((v) => { const r = picks[v.id]?.rating; if (r) count[r]++; });
+  $("c-like").textContent = count.like; $("c-maybe").textContent = count.maybe; $("c-no").textContent = count.no;
+  $("c-none").textContent = VOICES.length - count.like - count.maybe - count.no;
+}
+
+const SUZU_ID = "6awt6FKyZGV0HyQEwisX";
+const SUZU_MODELS = [
+  { id: "eleven_flash_v2_5", name: "Flash v2.5", ms: 234, note: "지금 쓰는 모델" },
+  { id: "eleven_v4_turbo", name: "v4 Turbo", ms: 235, note: "새 빠른 모델" },
+  { id: "eleven_v3_conversational", name: "v3 Conversational", ms: 225, note: "대화용 표현 모델" },
+  { id: "eleven_v4", name: "v4", ms: 902, note: "고급" },
+  { id: "eleven_multilingual_v2", name: "Multilingual v2", ms: 1172, note: "고급" },
+];
+const SUZU_LINES = [
+  { label: "인사", text: "안녕! 나는 스노봇이야. 오늘도 같이 있어 줄게." },
+  { label: "휴식 제안 · 숫자", text: "운전한 지 두 시간이 넘었어요. 조금 쉬어갈까요? 다음 쉼터는 12킬로미터 뒤예요." },
+  { label: "주차 위치 · 영문", text: "주차 위치 기억해 뒀어요. 지하 3층, C 구역 12번이에요." },
+  { label: "공기질 · 단위", text: "차 안 이산화탄소가 1,500ppm이에요. 창문을 조금 열어 볼까요?" },
+  { label: "기쁨", text: "와, 오늘 하늘 진짜 예쁘다! 우리 노래 한 곡 들을까?" },
+  { label: "졸림", text: "음… 나도 조금 졸려요. 그래도 운전자님이 먼저예요!" },
+];
+const suzuKey = (m) => `suzu-${m}`;
+const suzuItem = (m, n) => ({ key: `suzu:${m.id}:${n}`, url: `audio/suzu_${m.id}_${n + 1}.mp3`, label: `Suzu · ${m.name} · ${SUZU_LINES[n].label}` });
+
+function renderSuzu() {
+  const t = $("suzu-table");
+  if (!t.firstChild) {
+    const head = document.createElement("thead"), hr = document.createElement("tr");
+    const h0 = document.createElement("th"); h0.textContent = "문장"; hr.append(h0);
+    SUZU_MODELS.forEach((m) => {
+      const th = document.createElement("th");
+      const nm = document.createElement("span"); nm.className = "m-name"; nm.textContent = m.name;
+      const k = document.createElement("span"); k.className = "m-kind " + (m.ms < 400 ? "fast" : "slow"); k.textContent = `첫 소리 ${(m.ms / 1000).toFixed(2)}초 · ${m.note}`;
+      const rate = document.createElement("div"); rate.className = "rate"; rate.setAttribute("role", "group"); rate.setAttribute("aria-label", `${m.name} 평가`);
+      RATES.forEach(([r, label]) => {
+        const b = document.createElement("button"); b.type = "button"; b.dataset.r = r; b.dataset.k = suzuKey(m.id); b.textContent = label;
+        b.onclick = () => setRating(suzuKey(m.id), picks[suzuKey(m.id)]?.rating === r ? null : r);
+        rate.append(b);
+      });
+      th.append(nm, k, rate); hr.append(th);
+    });
+    head.append(hr);
+    const body = document.createElement("tbody");
+    SUZU_LINES.forEach((l, n) => {
+      const tr = document.createElement("tr"), td0 = document.createElement("td");
+      const lb = document.createElement("span"); lb.className = "row-label"; lb.textContent = `${n + 1}. ${l.label}`;
+      const tx = document.createElement("span"); tx.className = "row-text"; tx.textContent = l.text;
+      const all = document.createElement("button"); all.type = "button"; all.className = "row-all"; all.textContent = "▶ 모델 5개 연달아";
+      all.onclick = () => { const items = SUZU_MODELS.map((m) => suzuItem(m, n)); startQueue(items); };
+      td0.append(lb, tx, all); tr.append(td0);
+      SUZU_MODELS.forEach((m) => {
+        const td = document.createElement("td"), b = document.createElement("button");
+        b.type = "button"; b.className = "play"; b.dataset.key = suzuItem(m, n).key; b.textContent = "▶";
+        b.setAttribute("aria-label", `${m.name}로 ${n + 1}번 문장 듣기`);
+        b.onclick = () => { stopQueue(); playItem(suzuItem(m, n)); };
+        td.append(b); tr.append(td);
+      });
+      body.append(tr);
+    });
+    t.append(head, body);
+  }
+  t.querySelectorAll(".play").forEach((b) => b.classList.toggle("on", b.dataset.key === playingKey));
+  t.querySelectorAll(".rate button").forEach((b) => { b.setAttribute("aria-pressed", String(picks[b.dataset.k]?.rating === b.dataset.r)); b.disabled = !canWrite; });
+}
+
+function playItem(it) {
+  playingKey = it.key;
+  audio.src = it.url;
+  audio.play().catch(() => { playingKey = null; renderAll(); });
+  $("now-playing").textContent = `재생 중: ${it.label}`;
+  renderAll();
+}
+function play(id, n) {
+  const v = VOICES.find((x) => x.id === id);
+  playItem({ key: `${id}_${n}`, url: src(id, n), label: `${v.name} · ${n + 1}번` });
+}
+function renderAll() { renderCards(); renderSuzu(); }
+function startQueue(items) {
+  if (!items.length) return;
+  queue = items.slice(1); $("stop").disabled = false; $("play-all").disabled = true;
+  playItem(items[0]);
+}
+audio.addEventListener("ended", () => {
+  playingKey = null;
+  if (queue && queue.length) { const next = queue.shift(); setTimeout(() => queue && playItem(next), 450); }
+  else { stopQueue(); $("now-playing").textContent = ""; }
+  renderAll();
+});
+function stopQueue() { queue = null; $("stop").disabled = true; $("play-all").disabled = false; }
+$("play-all").onclick = () => {
+  const items = VOICES.filter((v) => v.group !== "r1" && picks[v.id]?.rating !== "no")
+    .map((v) => ({ key: `${v.id}_${line}`, url: src(v.id, line), label: `${v.name} · ${line + 1}번` }));
+  startQueue(items);
+};
+$("stop").onclick = () => { audio.pause(); playingKey = null; stopQueue(); $("now-playing").textContent = ""; renderAll(); };
+
+// 저장: 목소리마다 문서 하나(picks/<voice_id>). 같은 문서에는 한 번에 하나씩만 쓴다.
+const writing = {};
+function persist(id) {
+  saveLocal();
+  if (!db || !canWrite) return;
+  const name = VOICES.find((v) => v.id === id)?.name ?? `Suzu · ${SUZU_MODELS.find((m) => suzuKey(m.id) === id)?.name ?? id}`;
+  const body = { rating: picks[id]?.rating ?? null, note: picks[id]?.note ?? "", name, updatedAt: new Date().toISOString() };
+  writing[id] = (writing[id] || Promise.resolve()).then(() => db.collection("picks").doc(id).set(body)).then(
+    () => setStatus("저장됨", "ok"),
+    (e) => {
+      if (e?.code === "invalid_argument") { canWrite = false; setStatus("이 화면에서는 보기만 할 수 있습니다", "warn"); renderAll(); }
+      else setStatus("저장하지 못했습니다. 잠시 뒤 다시 눌러 주세요", "warn");
+    });
+}
+function setRating(id, r) { picks[id] = { ...(picks[id] || {}), rating: r }; renderAll(); persist(id); }
+function setNote(id, note) { if ((picks[id]?.note || "") === note) return; picks[id] = { ...(picks[id] || {}), note }; renderAll(); persist(id); }
+function setStatus(text, kind) { const s = $("save-status"); s.textContent = text; s.className = `status ${kind || ""}`; }
+
+picks = loadLocal();
+renderLines(); renderAll();
+
+(async () => {
+  db = window.claude ? await window.claude.use("db") : null;
+  if (!db) { setStatus("이 브라우저에만 기억됩니다 (공유 저장 연결 안 됨)", "warn"); return; }
+  setStatus("공유 저장에 연결됨", "ok");
+  db.collection("picks").onSnapshot((snap) => {
+    const next = {};
+    snap.docs.forEach((d) => { const x = d.data(); next[d.id] = { rating: x.rating ?? null, note: x.note ?? "" }; });
+    picks = next; saveLocal(); renderAll();
+  }, () => setStatus("저장 연결이 끊겼습니다. 새로 고침해 주세요", "warn"));
+})();
+</script>

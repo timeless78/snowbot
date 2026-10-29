@@ -1,0 +1,21 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "c-alu-neck",
+   "prompt": "Front three-quarter product photo of the snowman desktop robot shown in the reference image, same industrial design: white and light grey chamfered rounded shell, visible hex screw heads, big head bigger than the small body, dot-pattern speaker grille and small engraved SNW-01 on the body, short stubby orange carrot nose with machined ring grooves, two round eyes with white sclera and large centered black pupils with thin metal rings, the right pupil holds a tiny camera lens, white mechanical eyelids lowered to the same height on both eyes, two black rubber eyebrow bars on round metal pivot caps at the same height. No arms, no screen, no LED lights. Variation: instead of an exposed mechanical neck joint, a wide brushed aluminum neck ring with fine diamond knurling sits between head and body, and the scarf is removed so the ring is fully visible. Light grey studio background, soft product light.",
+   "references": [
+    "docs/assets/design-tech/c-industrial.png"
+   ],
+   "out": "docs/assets/design-tech/c3-alu-neck.png"
+  },
+  {
+   "id": "c-winter-accessories",
+   "prompt": "Product photo of the snowman desktop robot shown in the reference image, same industrial design: white and light grey chamfered rounded shell, visible hex screw heads, big head bigger than the small body, dot-pattern speaker grille and small engraved SNW-01 on the body, short stubby orange carrot nose with machined ring grooves, two round eyes with white sclera and large centered black pupils with thin metal rings, the right pupil holds a tiny camera lens, white mechanical eyelids lowered to the same height on both eyes, two black rubber eyebrow bars on round metal pivot caps at the same height. No arms, no screen, no LED lights. wearing removable winter accessories: a small bright orange knitted beanie hat with a pom-pom on top of the head, the orange knitted scarf around the exposed neck joint, and next to the robot on the desk a neatly arranged set of spare accessories: a cream knitted scarf, a navy knitted scarf, and tiny grey felt earmuffs. Light oak desk, soft winter window light, cozy but clean product styling.",
+   "references": [
+    "docs/assets/design-tech/c-industrial.png"
+   ],
+   "out": "docs/assets/design-tech/c3-winter-accessories.png"
+  }
+ ]
+}
