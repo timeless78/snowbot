@@ -3,11 +3,21 @@
 
     <uses-feature android:name="android.hardware.type.automotive" android:required="true" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- 말하기 버튼을 누른 동안만 녹음한다. 소리는 저장하지 않고 서버의 음성 인식으로만 보낸다 -->
+    <!-- 말하기 버튼을 누른 동안만 듣는다. 차의 Pleos 음성 인식(차 안 엔진)이 글자로 바꾸고, 소리는 저장하지 않는다.
+         Pleos 엔진을 못 쓰는 기기에서는 소리를 서버의 음성 인식으로만 보낸다 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Pleos 음성: 듣기(STT)·말하기(TTS). 보호 수준 normal 이라 설치하면 바로 허용된다 -->
+    <uses-permission android:name="pleos.car.permission.STT_SERVICE" />
+    <uses-permission android:name="pleos.car.permission.TTS_SERVICE" />
     <!-- Pleos 차량 데이터 조회 (신청 불필요): 기어·트립 운전 시간 / 운전자 주의 경고등 -->
     <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
     <uses-permission android:name="pleos.car.permission.CAR_SAFETY" />
+    <!-- 말할 때 판단기 (신청 불필요): 방향지시등·전조등 / 와이퍼 -->
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <!-- 앱 화면을 닫아도 차 상태를 보고 출발·도착·안전 알림을 하는 포그라운드 서비스 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:allowBackup="false"
@@ -27,5 +37,14 @@
             <!-- 주행 중에도 쓸 수 있는 화면(주의 분산 최적화). 주행 중에는 입력 칸을 숨긴다 -->
             <meta-data android:name="distractionOptimized" android:value="true" />
         </activity>
+
+        <service
+            android:name=".SnowBotService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="In-car companion: watches vehicle state (gear, turn signal, driver attention warning) to speak at departure, arrival and safety warnings, and stays quiet while the driver is busy." />
+        </service>
     </application>
 </manifest>

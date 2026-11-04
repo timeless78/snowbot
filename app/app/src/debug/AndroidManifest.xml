@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- debug 빌드에만 들어가는 Pleos 음성 SDK 시험 화면. 출시 APK 에는 이 화면이 없다 (권한은 main 에 있다) -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- adb 로 띄운다 (방법은 SpeechCheckActivity.kt 맨 위 주석) -->
+        <activity
+            android:name=".SpeechCheckActivity"
+            android:exported="true"
+            android:launchMode="singleTop" />
+    </application>
+</manifest>

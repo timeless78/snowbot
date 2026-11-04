@@ -9,8 +9,8 @@
 |---|---|---|
 | **Vehicle** (v2.3.x) | 차량 상태 조회·제어. 도메인: Brake, CarInfo, Display, Door, DrivingMode, EvBattery, Fuel, **HVAC**, Light, Odometer, Safety, Seat, SideMirror, Steeringwheel, Tire, Toll, TurnSignal, Window, Wiper | **조회(Vehicle State)는 신청 없이 사용.** 제어(Vehicle Control)는 "준비 중" |
 | **NaviHelper** | 목적지·경로·**경유지 추가**, 길 안내 이벤트 | 신청 없이 사용 |
-| **SpeechToText** (v3.3.1) | 말 → 글. 서버 / 차 안 엔진 / 둘 다(HYBRID). **명령 실행은 안 함** | 문서 있음. 프로젝트 화면 기준 "준비 중" (확인 필요) |
-| **TextToSpeech** (v3.3.1) | 글 → 말, 차 스피커로 재생 | 위와 같음 |
+| **SpeechToText** (v3.3.1) | 말 → 글. 서버 / 차 안 엔진 / 둘 다(HYBRID). **명령 실행은 안 함** | **11/2 에뮬레이터 동작 확인, 앱에 적용** — 권한 `STT_SERVICE` 한 줄(normal, 승인 불필요), 차 안 엔진은 앱 등록 불필요. 이름 "스노봇"을 "스노프"로 알아들음(앱에서 고침) |
+| **TextToSpeech** (v3.3.1) | 글 → 말, 차 스피커로 재생 | **11/2 동작 확인, 앱에 적용** — 권한 `TTS_SERVICE`, 재생 시작 0.1초, 기본 화자 seoyoon. SERVER 모드는 앱 등록 필요 |
 | **FusedLocation** (v1.1.3) | 차 위치(위도·경도·고도·방향), **영역 진입/이탈 알림** | 위와 같음 |
 | **Gleo Interface** | 앱 기능을 JSON(App Schema)으로 등록하면 **Gleo AI(LLM)가 음성 명령으로 앱 기능을 호출**(function calling). 앱 응답으로 Gleo 가 답을 만든다 | 가이드 "개선 중". 스키마 전달 방법 문서 있음 |
 
@@ -57,10 +57,10 @@
    - **S3 졸음·공기질**: 모듈 CO₂ + 주행 시간(Odometer 트립) → Vehicle **HVAC**(외기 전환은 제어 SDK "준비 중"이라 안내만) + NaviHelper **경유지(쉼터) 추가** + TTS + Gleo.
    - **S1 주차 위치**: FusedLocation(위치) + 모듈 카메라 기둥 글자 인식 → 하차 시 저장 → 폰/집 SnowBot 이 알려 줌.
 6. **카테고리**: Lifestyle 또는 Mobility Services(주행 중 제한 허용 범위가 더 넓음 — 차량 관리·위치 기반 정보). 기획서에 정해 적는다.
-7. **TTS·STT·FusedLocation "준비 중" 표시**는 Playground 프로젝트를 만들어 직접 확인해야 한다(사용자 계정 필요). 안 되면 안드로이드 표준 TTS/STT 로 대체.
+7. ~~TTS·STT·FusedLocation "준비 중" 표시~~ → 10/28 설명회: 공모전 기간에는 권한만 적으면 쓸 수 있다. **TTS·STT 는 11/2 확인 후 앱의 듣기·차 스피커 말하기에 적용**(app/README.md "Pleos 음성"). FusedLocation 은 아직 안 써 봄.
 
 ## 문의 목록에 더할 것 (00-contest-rules.md 초안에 추가)
 
 - 차량 앱에서 안드로이드 표준 Bluetooth(BLE)로 외부 기기와 연결해도 되는지
-- 공모전 기간에 TTS·STT·FusedLocation SDK 를 신청해 쓸 수 있는지("준비 중" 표시)
+- ~~공모전 기간에 TTS·STT·FusedLocation SDK 를 신청해 쓸 수 있는지("준비 중" 표시)~~ → 신청 없이 권한만으로 됨(설명회·11/2 확인)
 - Gleo Interface(App Schema 등록)를 공모전 앱에서 에뮬레이터로 시험할 수 있는지

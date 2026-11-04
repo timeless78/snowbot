@@ -40,4 +40,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("ai.pleos.playground:Vehicle:2.3.2")   // Pleos 차량 데이터 (조회만 — CAR_* 권한은 신청 불필요)
+    // Pleos 음성 SDK — 스노봇 듣기·말하기 (PleosVoice, 차 안 엔진)
+    implementation("ai.pleos.playground:TextToSpeech:3.3.1")
+    implementation("ai.pleos.playground:SpeechToText:3.3.1")
+    testImplementation("junit:junit:4.13.2")
 }

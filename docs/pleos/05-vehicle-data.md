@@ -190,6 +190,8 @@
 | 타이어 저압 기준값 | `Tire.getLowTirePressure(WheelArea)` | kPa — **현재 공기압이 아니라 "이 아래면 위험" 기준값** | CAR_SAFETY | G | O | ✗ |
 | 실제 타이어 공기압 ★ | `Tire.getTirePressure` | kPa | **PRIVATE_CAR_SAFETY(불가)** | — | — | ✗ |
 
+> ⚠ 2026-11-04 에뮬레이터: `getTelltalesInfo` 가 **"getTelltalesInfo need Permission"** 으로 실패한다(CAR_SAFETY granted=true, 앱 화면을 열어도 같음). SDK 는 CAR_SAFETY 만 요구한다(`@RequiresCustomPermission`). 차량 서비스 쪽 거절로 보인다 — 원인 확인 필요. 그동안 주의 경고 기능은 시험 명령으로만 확인했다.
+
 **경고등 종류(80여 개) 중 스노봇에 쓸 만한 것**: `DRIVER_ATTENTION`(운전자 주의 경고), `OVER_SPEED`, `ICY_ROAD`, `SEAT_BELT`, `DOOR_OPEN`, `TRUNK_OPEN`, `TPMS`(타이어), `LOW_FUEL`, `LOW_EV_BATTERY`, `EV_CHARGING_CONNECTOR`, `PARKING_BRAKE`, `AUTO_HOLD`, `MASTER_WARNING`, `ENGINE_TEMPERATURE`, ADAS 계열 `FCA`(전방 충돌 방지), `LKA`/`LFA`(차선 유지·따라가기), `LCA_LEFT/RIGHT`, `ELK`, `ICC`(스마트 크루즈), 드라이브 모드 계열(ECO/SPORT …), `CHILD_PRESENCE_DETECTION_OFF`.
 에뮬레이터 Virtual Console 의 Telltales 카드가 지원하는 경고등(2026-10-28 직접 확인, 37종): Parking Brake, Electronic Parking Brake, Seat Belt, Door Open, ABS, MDPS, TPMS, Low Volt Battery, ESC, ESC Off, Airbag, AFS, Master Warning, Auto Hold, Auto High Beam, Headlamp Low/High, Position Lamp, Front/Rear Fog Lamp, Engine Oil Pressure, Engine Temperature, Emergency Call, EV System, Power Down, RBS, Immobilizer, Engine, LED Headlamp, Preheat, Particle Filter, H2 Sensor, H2 Leak, Passenger Airbag Off/On, Turn Signal Left/Right. **DRIVER_ATTENTION 은 없다** → 앱 시험은 디버그 명령으로 대신한다([../../app/README.md](../../app/README.md)).
 Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 http://127.0.0.1:8088/ (기어 P/R/N/D, 가속·브레이크 페달로 속도도 바뀐다).
@@ -287,7 +289,7 @@ Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 htt
 
 **권한·신청 정리**
 - 신청 없이 지금 쓸 수 있음: **Vehicle 조회(CAR_* 권한, 매니페스트 선언만)**, **NaviHelper(NAVI_* 권한)**, AAOS `CarUxRestrictions`.
-- 신청해야 하는데 지금은 불가("준비 중"): **FusedLocation**, TTS, STT, **Vehicle Control(모든 set)**.
+- 신청해야 하는데 지금은 불가("준비 중"): **FusedLocation**, **Vehicle Control(모든 set)**. (TTS·STT 는 10/28 설명회 안내대로 권한만으로 쓸 수 있었다 — 11/2 확인, 앱에 적용. 설명회는 FusedLocation 도 같다고 했으나 아직 안 써 봄)
 - 일반 앱은 못 씀: PRIVATE_* (경고등 구독, 실제 타이어 공기압, capability 정보).
 - AAOS 속도·에너지 권한은 Google 기준 사용자 허용이 필요할 수 있음(미확인).
 

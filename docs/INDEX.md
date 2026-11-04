@@ -23,6 +23,8 @@
 | [docs/contest-plan.html](contest-plan.html) | **공모전 계획 한 장 페이지** (아티팩트: https://claude.ai/artifact/NFp3Lqst5Vg3ajZ9arGWkW) — 기기 연결·대화 순서·기능·사업성·캐릭터 봇·일정 |
 | [docs/pleos/README.md](pleos/README.md) | **Pleos 공모전** — 일정, 확정된 방향, SnowBot 설계와 맞춰 볼 점, 남은 작업 |
 | [docs/pleos/01-proposal.md](pleos/01-proposal.md) | **공모전 기획서 초안** — 접수양식 8개 항목 순서, 사업성 숫자(가정 표시) |
+| [docs/pleos/07-dev-plan.md](pleos/07-dev-plan.md) | **개발 기획 (11/1)** — 말할 때 판단기(차 신호 10여 개로 운전 부담 0~3), 수다 단계 1~5, 성격 4축(MBTI 방식), 11/15까지 일정. [모의 심사](pleos/review-2026-11-01-mock-judging.md) 지적 대응 |
+| [docs/pleos/check-board.html](pleos/check-board.html) | **공모전 확인판** (아티팩트: https://claude.ai/artifact/6ECoSDnsAupJQKDAfzqDQ3) — 확인 현황(항목·사용자 확인·메모는 아티팩트 저장 공간 `checks`·`updates`), 시험 기록(11/2 Pleos TTS·STT 동작 확인), 설명회 요점. 진행될 때마다 고친다 |
 | [docs/pleos/02-research.md](pleos/02-research.md) | 공모전·Pleos SDK·사용자 불편 조사 자료와 출처 |
 | [docs/pleos/03-module-protocol.md](pleos/03-module-protocol.md) | 모듈 ↔ 앱 연동 규격 초안 v0.1 |
 | [docs/08-brand-character-bots.md](08-brand-character-bots.md) | **브랜드 캐릭터 봇 시안** — 같은 기구에 겉만 바꾼 현대 SD 휴머노이드(BOT-H1)·기아 SD 호랑이(BOT-K1), 브랜드 자산 주의 |

@@ -9,8 +9,9 @@ import android.content.Context
  *   주의 경고 켜짐   : 걱정 + 쉼터 권유. 같은 경고는 ATTENTION_GAP_MIN 분에 한 번
  *   오래 운전        : REST_AFTER_MIN 분째에, 그 뒤 REST_EVERY_MIN 분마다 쉬자고
  * 첫 상태(앱을 켠 순간)에는 말하지 않는다. 말하는 중(듣기 중)이면 출발·도착 인사는 건너뛴다. 안전 알림은 그래도 한다.
+ * safety=true(주의 경고·휴식)인 말은 운전이 바쁠 때(판단기 3단계) 버리지 않고 미뤘다가 한다 — 판단은 부르는 쪽(SnowBotService).
  */
-class CarCoach(private val context: Context, private val say: (expr: String, head: String?, line: String) -> Unit) {
+class CarCoach(private val context: Context, private val say: (expr: String, head: String?, line: String, safety: Boolean) -> Unit) {
 
     private var last: CarState.Snapshot? = null
     private var attentionAt = -ATTENTION_GAP_MIN.toLong()   // 분 단위 시계(elapsedRealtime / 60000)
@@ -23,14 +24,14 @@ class CarCoach(private val context: Context, private val say: (expr: String, hea
         when {
             !before.driving && now.driving -> {
                 restAtMin = 0
-                if (!busy) say("greet", "nod", pick(R.array.car_depart))
+                if (!busy) say("greet", "nod", pick(R.array.car_depart), false)
             }
             before.driving && !now.driving && now.gear == "P" -> {
-                if (!busy) say("happy", "nod", pick(if (now.drivingMin >= 60) R.array.car_arrive_long else R.array.car_arrive))
+                if (!busy) say("happy", "nod", pick(if (now.drivingMin >= 60) R.array.car_arrive_long else R.array.car_arrive), false)
             }
             now.driving && now.attention && !before.attention && clockMin - attentionAt >= ATTENTION_GAP_MIN -> {
                 attentionAt = clockMin
-                say("worried", null, pick(R.array.car_attention))
+                say("worried", null, pick(R.array.car_attention), true)
             }
             now.driving && now.drivingMin >= REST_AFTER_MIN && now.drivingMin - restAtMin >= REST_EVERY_MIN -> {
                 restAtMin = now.drivingMin
@@ -38,7 +39,7 @@ class CarCoach(private val context: Context, private val say: (expr: String, hea
                 val mins = now.drivingMin % 60
                 val time = if (mins == 0) context.getString(R.string.car_hours, hours)
                            else context.getString(R.string.car_hours_mins, hours, mins)
-                say("sleepy", null, context.getString(R.string.car_rest, time))
+                say("sleepy", null, context.getString(R.string.car_rest, time), true)
             }
         }
     }

@@ -214,6 +214,47 @@ def test_say_goes_to_the_app_when_device_is_off(env):
         assert read_speech(app)[0] == "괜찮아요?"
 
 
+def read_said(ws, until="say_end"):
+    """앱이 자기 목소리로 말할 때: say 글자들과 다른 메시지들을 say_end 까지 모은다."""
+    said, others = [], []
+    while True:
+        msg = ws.receive_json()
+        if msg["type"] == "say":
+            said.append(msg["text"])
+        elif msg["type"] == until:
+            assert "cancelled" not in msg
+            return said, others
+        else:
+            others.append(msg)
+
+
+def test_app_with_its_own_voice_gets_text_not_sound(env):
+    with connect_pair(env) as (app, dev):
+        app.send_json({"type": "express", "device_id": env.a["id"], "expr": "sleepy", "say": "쉬어요",
+                       "voice": "app", "tts": "app"})
+        assert dev.receive_json() == {"type": "express", "expr": "sleepy", "say": "쉬어요"}   # tts 는 기기로 안 감
+        assert read_said(app) == (["쉬어요"], [])
+
+
+def test_device_still_speaks_with_server_voice_when_app_has_its_own(env):
+    with connect_pair(env) as (app, dev):
+        app.send_json({"type": "express", "device_id": env.a["id"], "expr": "happy", "say": "안녕", "tts": "app"})
+        dev.receive_json()
+        assert read_speech(dev)[0] == "안녕"
+
+
+def test_app_that_listens_itself_sends_text_and_hears_text_back(env):
+    with connect_pair(env) as (app, dev):
+        app.send_json({"type": "listen_start", "device_id": env.a["id"], "stt": "app", "tts": "app", "voice": "app"})
+        app.send_json({"type": "chat", "device_id": env.a["id"], "text": "공기 어때", "tts": "app", "voice": "app"})
+        said, others = read_said(app)
+        assert said == ["좋아요!", "같이 가요."]
+        assert others[0] == {"type": "reply_start", "device_id": env.a["id"], "expr": "happy", "head": "nod"}
+        assert all(m["type"] != "heard" for m in others)   # 서버는 듣지 않았다
+        assert dev.receive_json() == {"type": "express", "expr": "happy", "head": "nod"}
+        assert env.brain.asked[0][1].endswith("[운전자] 공기 어때")
+
+
 def test_parse_reply_reads_tag_and_survives_bad_ones():
     assert parse_reply("[happy nod] 좋아요!") == Reply("좋아요!", "happy", "nod", "[happy nod] 좋아요!")
     assert parse_reply("[sleepy none] 쉬어요") == Reply("쉬어요", "sleepy", None, "[sleepy none] 쉬어요")
@@ -354,3 +395,40 @@ def test_a_line_said_first_is_remembered_in_the_situation(env):
         read_speech(dev)
         chat_once(env, app, dev, "그래 알았어")
         assert '스노봇이 먼저 한 말: "쉼터에서 쉬어 가요."' in env.brain.asked[0][1]
+
+
+def test_driving_load_sets_reply_length_and_situation(env):
+    with connect_pair(env) as (app, dev):
+        for load in (0, 1, 2, 3):
+            app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False, "load": load})
+            chat_once(env, app, dev, "안녕")
+        app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False, "load": "3"})   # 이상한 값 → 주행 기본
+        chat_once(env, app, dev, "안녕")
+        assert env.brain.limits == [3, 2, 1, 1, 2]
+        asked = [a[1] for a in env.brain.asked]
+        assert "한 문장으로" not in asked[0] and "한 문장으로" not in asked[1]
+        assert "운전에 주의가 필요한 때" in asked[2]
+        assert "운전이 바쁜 순간" in asked[3]
+        assert "운전이 바쁜 순간" not in asked[4]
+
+
+async def slow_tts(text):
+    """첫 조각만 내고 오래 멈추는 목소리 — 말하는 도중을 흉내 낸다."""
+    yield b"\x01\x00" * 4
+    await asyncio.sleep(30)
+    yield b"\x02\x00"
+
+
+def test_busy_load_cuts_off_what_snowbot_was_saying(tmp_path):
+    db = str(tmp_path / "relay.db")
+    a = dict(zip(("id", "key", "claim"), Store(db).add_device()))
+    with TestClient(create_app(db, tts=slow_tts, stt=FakeStt, brain=FakeBrain())) as client:
+        env = SimpleNamespace(client=client, a=a)
+        with connect_pair(env) as (app, dev):
+            app.send_json({"type": "express", "device_id": a["id"], "expr": "happy", "say": "오늘 이야기를 길게 할게요."})
+            assert dev.receive_json()["type"] == "express"
+            assert dev.receive_json()["type"] == "audio_start"
+            assert dev.receive()["bytes"]
+            app.send_json({"type": "car", "gear": "D", "driving_min": 3, "attention": False, "load": 3})
+            end = dev.receive_json()
+            assert end["type"] == "audio_end" and end["cancelled"] is True

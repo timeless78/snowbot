@@ -46,7 +46,8 @@
 | 서버 → 재생할 쪽 | `{"type":"audio_start","id","format":"pcm_16000","sample_rate":16000,"text"}` → 바이너리 프레임들(16비트 모노 PCM) → `{"type":"audio_end","id"}` | 새 말이 오면 하던 말은 끊고 `audio_end` 에 `"cancelled":true`. 실패는 `"error"`. 대화 대답은 문장이 나오는 대로 이어 말하므로 `text` 가 빈 글자 |
 | 앱 → 서버 (말하기) | `{"type":"listen_start","device_id","voice"}` → **바이너리 프레임들**(마이크 PCM 16kHz 모노 16비트, 0.1초씩) → `{"type":"listen_end","device_id","voice"}` | 하던 말·생각을 멈추고 듣는다. 끝나면 대답 |
 | 서버 → 앱 | `{"type":"heard","text","final":false}` (듣는 중) → `{"type":"heard","text","final":true,"audio_ms","peak"}` | 받아 적은 글자. `peak` 가 0 이면 마이크가 소리를 못 받은 것 |
-| 앱 → 서버 (글자로) | `{"type":"chat","device_id","text","voice"}` | 듣기 없이 바로 대답 (시험·키보드) |
+| 앱 → 서버 (글자로) | `{"type":"chat","device_id","text","voice"}` | 듣기 없이 바로 대답. 앱이 차 듣기(Pleos STT)로 받아 적은 말, 시험용 글자 |
+| 앱이 차 음성을 쓸 때 (Pleos) | `listen_start` 에 `"stt":"app"` / 아무 메시지에 `"tts":"app"` | `stt:"app"`: 하던 말·생각만 멈추고 서버는 듣지 않는다(들은 글자는 `chat` 으로 온다). `tts:"app"`: **이 앱으로** 갈 말은 소리 대신 글자로 `{"type":"say","id","text"}`(문장마다) → `{"type":"say_end","id"}`(끊기면 `"cancelled":true`). 기기 스피커로 가는 말은 그대로 서버 목소리 |
 | 앱 → 서버 (차 상태) | `{"type":"car","gear":"P\|R\|N\|D\|?","driving_min":정수,"attention":bool}` | 기기로 보내지 않는다. 대답할 때 상황에 넣고 문장 수를 정한다: 주행 중 2(30자 안팎) · 주차 중 3 · 모르면 2. 앱의 `express.say`(스노봇이 먼저 한 말)도 10분 동안 상황에 넣는다 |
 | 서버 → 앱·기기 | 앱에 `{"type":"reply_start","expr","head"}`, 기기에 `{"type":"express","expr","head"}` → 목소리(위 audio_*) → 앱에 `{"type":"reply","text","expr","head","timing":{stt_ms,face_ms,llm_ms}}` | 표정 먼저, 말은 문장 단위로. 못 들었거나 Claude 가 실패하면 정해 둔 말(걱정 표정)로 대신하고 `reply.error` |
 
