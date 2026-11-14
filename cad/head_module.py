@@ -22,13 +22,17 @@ SEAM_Y = 12.0           # 앞·뒤 나누는 면
 SCREW_ANGLES = (10.0, 75.0, 105.0, 170.0, -35.0, 215.0)   # 이음선 둘레 각 (x+ 에서 위로)
 SCREW_BACK = 4.0        # 이음선 뒤 몇 mm 에 나사가 들어가나
 INSERT_D, INSERT_L = 3.0, 4.0     # M2 인서트 구멍 (인서트 바깥지름 3.2 → 녹여 박을 구멍 3.0, 시험 출력으로 정함)
-SCREW_D, HEAD_D, HEAD_SINK = 2.4, 4.2, 1.0   # 나사 구멍, 나사 머리 자리 지름·깊이
+SCREW_D, HEAD_D, HEAD_SINK = 2.2, 4.2, 1.0   # 나사 구멍 (공차 판 A 2.2, 2026-11-07), 나사 머리 자리 지름·깊이
 TAB_W, TAB_T, TAB_LEN = 8.0, 4.0, 10.0        # 인서트 탭 폭·두께(지름 방향)·길이(y, 이음선 앞 3mm 포함)
 
 VENT_N, VENT_W, VENT_H, VENT_PITCH, VENT_DZ = 5, 26.0, 2.2, 4.4, -2.0   # 환기 슬롯
 MIC_HOLES_DZ, MIC_HOLE_D = 22.0, 1.2
 
-SPINE_X0, SPINE_X1 = 6.5, 9.0     # 세로 판 (끄덕임 서보 날개 바로 옆)
+import neck_module as _nm
+# 세로 판: 끄덕임 서보 날개 윗면(축 쪽 면)이 이 판의 -x 면에 닿는다.
+# 축 끝 x = CHEEK_X0 - HORN_T, 날개 윗면은 축 끝에서 (바닥~축 끝 − 바닥~날개 윗면) 만큼 안쪽. 실측 31.59 − 19.50 → 4.91
+SPINE_X0 = (_nm.CHEEK_X0 - _nm.HORN_T) - (_nm.MG_TOTAL_H - _nm.MG_TAB_TOP)
+SPINE_X1 = SPINE_X0 + 2.5
 SPINE_TOP = 32.0                  # 세로 판 꼭대기 (머리 중심 기준)
 # 틀을 앞 껍데기에 붙이는 자리 (x, 귀 앞면 y, 머리 중심 기준 z). 앞 껍데기 안쪽 벽에서 기둥이 뒤로 뻗어 나온다
 MOUNTS = ((10.5, -12.5, 30.0), (-33.0, -4.5, 8.0), (33.0, -11.0, -9.0))
@@ -140,29 +144,45 @@ def chassis() -> Part:
     above_bottom = Pos(0, 0, nm.HEAD_BOTTOM_Z + WALL + 0.6 + 100) * Box(300, 300, 200)
 
     # 1) 세로 판 — 끄덕임 서보 몸체가 지나는 창
-    spine = Pos((SPINE_X0 + SPINE_X1) / 2, (SPINE_Y0 + SPINE_Y1) / 2, c + 4) * Box(SPINE_X1 - SPINE_X0, SPINE_Y1 - SPINE_Y0, 64)
+    import eye_module as em
+    # 눈꺼풀 서보(실측으로 길어지고 축 둘레로 돌림) 뒤 모서리 + 0.3 → 세로 판 앞 끝·나사 귀 팔이 그 뒤에서 시작
+    lid_back_y = em.eyelid_linkage(1.0)["sg51r_eyelid"].bounding_box().max.Y + 0.3
+    spine_y0 = max(SPINE_Y0, lid_back_y)
+    spine = Pos((SPINE_X0 + SPINE_X1) / 2, (spine_y0 + SPINE_Y1) / 2, c + 4) * Box(SPINE_X1 - SPINE_X0, SPINE_Y1 - spine_y0, 64)
     nod_window = Pos(0, (-6.0 + 16.8) / 2, nm.NOD_Z) * Box(40, 16.8 + 6.0 + 1.0, nm.MG_W + 1.0)
     spine -= nod_window
     # 2) 눈썹 서보 옆 받침 (세로 판에서 서보 옆면까지)
-    brow_pad = Pos((BROW_SERVO_X1 + 0.1 + SPINE_X0) / 2, -11.0, c + 16) * Box(SPINE_X0 - BROW_SERVO_X1 - 0.1 + 0.01, 18, 26)
+    brow_x1 = em.brows(0.0)["sg51r_brow"].bounding_box().max.X                 # 눈썹 서보 옆면 (실측 폭 12.3 반영)
+    brow_pad = Pos((brow_x1 + 0.1 + SPINE_X0) / 2, -11.0, c + 16) * Box(SPINE_X0 - brow_x1 - 0.1 + 0.01, 18, 26)
     # 3) 눈꺼풀 서보 뒤 블록
-    lid_block = Pos(10.3, -9.5, c - 9.0) * Box(17.0, 3.0, 11.0)
+    y_back = em.SG_L - em.SG_SHAFT_FROM_END                                   # 서보 뒤 끝 (서보 좌표)
+    lid_block = em.eyelid_servo_location() * Pos(0, y_back + 1.55, -em.SG_CASE_TOP - em.SG_H / 2) * Box(11.0, 3.0, em.SG_H)
+    lid_block &= Pos(0, 0, nm.NOD_Z + nm.MG_W / 2 + 0.3 + 50) * Box(300, 300, 100)    # 끄덕임 서보 날개 위로만
     # 4) 끄덕임 서보 뒤 받침판 + 핀 받침 (반대쪽 요크 판의 핀이 들어온다)
-    back_plate = Pos(-4.0, 23.0, nm.NOD_Z) * Box(26.0, 3.0, 12.0)
-    pivot_arm = Pos(-15.0, 9.5, nm.NOD_Z) * Box(4.0, 30.0, 8.0)
-    pivot_hole = Pos(-15.0, 0, nm.NOD_Z) * Rot(0, 90, 0) * Cylinder(nm.PIVOT_D / 2 + 0.15, 10)
+    wing_end_y = nm.MG_L / 2 - nm.MG_SHAFT_FROM_END + nm.MG_TAB_L / 2      # 서보 뒤 날개 끝 (실측 반영 21.86)
+    back_plate = Pos(-4.0, wing_end_y + 1.5, nm.NOD_Z) * Box(26.0, 3.0, 12.0)
+    arm_cx, arm_t = -(nm.PIVOT_ARM_X0 + nm.PIVOT_ARM_X1) / 2, nm.PIVOT_ARM_X0 - nm.PIVOT_ARM_X1
+    pivot_arm = Pos(arm_cx, 9.5, nm.NOD_Z) * Box(arm_t, 30.0, 8.0)
+    pivot_hole = Pos(arm_cx, 0, nm.NOD_Z) * Rot(0, 90, 0) * Cylinder(nm.PIVOT_D / 2 + 0.15, 10)
     # 5) XIAO 받침 (뒤판 + 아래 턱) + 세로 판까지 가로 막대
     xiao_back = Pos(XIAO_X, -5.5, c + 0.25) * Box(17.8, 2.0, 25.5)
     xiao_ledge = Pos(XIAO_X, -13.0, c - 9.5) * Box(17.8, 17.0, 2.0)
-    beam = Pos((XIAO_X + 8.9 + SPINE_X0) / 2, -5.5, c - 10.5) * Box(SPINE_X0 - XIAO_X - 8.9, 2.0, 3.0)
+    beam_y = max(-5.5, lid_back_y + 1.0)                                     # 눈꺼풀 서보 뒤 모서리 피함
+    beam = Pos((XIAO_X + 8.9 + SPINE_X0) / 2, beam_y, c - 10.5) * Box(SPINE_X0 - XIAO_X - 8.9, 2.0, 3.0)
     # 6) 앞 껍데기 기둥에 나사로 붙는 귀 3곳 (나사는 뒤에서 앞으로)
     lugs = Part()
     for x, y, z in MOUNTS:
         lugs += Pos(x, y + LUG_T / 2, c + z) * Box(LUG_W, LUG_T, LUG_W)
         lugs -= Pos(x, y, c + z) * Rot(90, 0, 0) * Cylinder(SCREW_D / 2, 10)
+    # 오른쪽 아래 귀(MOUNTS[2]) 팔: 눈꺼풀 서보 끝(x) 바깥에서 귀까지 + 서보 뒤에서 눈꺼풀 블록까지 (ㄱ 자)
+    lid_end_x = em.eyelid_linkage(1.0)["sg51r_eyelid"].bounding_box().max.X + 0.3
+    m2x, m2y, m2z = MOUNTS[2]
+    y_hi = lid_back_y + 3.0
+    lug2_arm = (Pos((lid_end_x + m2x + 3.5) / 2, (m2y + y_hi) / 2, c + m2z) * Box(m2x + 3.5 - lid_end_x, y_hi - m2y, LUG_W)
+                + Pos((21.0 + lid_end_x + 1.0) / 2, lid_back_y + 1.5, c + m2z) * Box(lid_end_x + 1.0 - 21.0, 3, LUG_W))   # x 21 부터: 끄덕임 혼(x 17~19) 피함
     lug_arms = (Pos((SPINE_X1 + MOUNTS[0][0]) / 2, MOUNTS[0][1] + 1.5, c + MOUNTS[0][2]) * Box(MOUNTS[0][0] - SPINE_X0 + 3, 3, LUG_W)
                 + Pos((XIAO_X - 8.9 + MOUNTS[1][0]) / 2, MOUNTS[1][1] + 1.5, c + MOUNTS[1][2]) * Box(abs(MOUNTS[1][0] - XIAO_X + 8.9) + 3, 3, LUG_W)
-                + Pos((18.8 + MOUNTS[2][0]) / 2, MOUNTS[2][1] + 1.5, c + MOUNTS[2][2]) * Box(abs(MOUNTS[2][0] - 18.8) + 3, 3, LUG_W))
+                + lug2_arm)
 
     spine &= Pos(0, 0, c + SPINE_TOP - 100) * Box(300, 300, 200)    # 이음선 나사 탭(75°)을 피해 꼭대기를 낮춤
     body = spine + brow_pad + lid_block + back_plate + pivot_arm + xiao_back + xiao_ledge + beam + lugs + lug_arms
@@ -175,8 +195,10 @@ def chassis() -> Part:
 
 
 def amp() -> Part:
-    """MAX98357A: 세로 판 바깥(+x)쪽에 기둥으로 띄워 붙인다."""
-    return Pos(SPINE_X1 + 0.5 + 1.5, 1.75, cz() + 3.0) * Box(3.0, 19.5, 17.8)
+    """MAX98357A: 세로 판 바깥(+x)쪽에 기둥으로 띄워 붙인다. 앞 끝은 눈꺼풀 서보 뒤 블록 뒤."""
+    import eye_module as em
+    y0 = max(-8.0, em.eyelid_linkage(1.0)["sg51r_eyelid"].bounding_box().max.Y + 3.8)   # 서보 뒤 블록(두께 3) 뒤
+    return Pos(SPINE_X1 + 0.5 + 1.5, y0 + 19.5 / 2, cz() + 3.0) * Box(3.0, 19.5, 17.8)
 
 
 JOINED = {

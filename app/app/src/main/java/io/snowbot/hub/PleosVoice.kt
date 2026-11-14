@@ -43,7 +43,18 @@ class PleosVoice(context: Context, private val onHeard: (text: String, final: Bo
     private var speechId = -1
     private var localId = -2   // 서버 말 id(1부터)와 겹치지 않게 음수
     private val lines = ArrayDeque<String>()
-    private var speaking = false
+
+    /** 지금 말하는 중인지. 화면 입자 구름이 말할 때 출렁이려고 본다. */
+    var isSpeaking = false
+        private set(value) {
+            if (field == value) return
+            field = value
+            onSpeaking?.invoke(value)
+        }
+
+    /** 말하기가 시작·끝날 때 알려 준다(화면 갱신). */
+    var onSpeaking: ((Boolean) -> Unit)? = null
+
     private val finishLater = Runnable { finishListening() }
 
     fun start() {
@@ -142,7 +153,7 @@ class PleosVoice(context: Context, private val onHeard: (text: String, final: Bo
             speechId = id
         }
         lines.addLast(text)
-        if (!speaking) next()
+        if (!isSpeaking) next()
     }
 
     /** 서버가 말을 끊었을 때(say_end cancelled). 끝까지 보낸 말은 받은 문장을 다 읽는다. */
@@ -153,13 +164,13 @@ class PleosVoice(context: Context, private val onHeard: (text: String, final: Bo
     fun stopSpeaking() {
         lines.clear()
         speechId = -1
-        if (speaking) tts?.stop()   // onStop 이 오면 speaking 이 풀린다
+        if (isSpeaking) tts?.stop()   // onStop 이 오면 speaking 이 풀린다
     }
 
     private fun next() {
         val engine = tts ?: return
         val line = lines.removeFirstOrNull() ?: return
-        speaking = true
+        isSpeaking = true
         engine.speak(line, true)
     }
 
@@ -176,7 +187,7 @@ class PleosVoice(context: Context, private val onHeard: (text: String, final: Bo
 
         private fun done() {
             main.post {
-                speaking = false
+                isSpeaking = false
                 next()
             }
         }

@@ -1,122 +1,116 @@
-# 스노봇 (SnowBot) — 도로를 보는 눈사람 동승자
+# 스노봇 커넥트 (SnowBot Connect)
 
-> 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect 차량 앱 + 탁상 로봇 모듈
+> 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect 차량 앱
 
-차의 신호(기어·운전 시간·운전자 주의 경고)를 읽고 **말할 때와 말의 길이를 스스로 고르는** 눈사람 동승자입니다.
-화면 대신 **표정과 짧은 목소리**로 졸음·실내 공기를 챙기고, 차에서 내리면 같은 스노봇이 **책상 위 로봇으로 이어집니다.**
+**차와 운전자를 함께 살피고, 대시보드 위 감성 봇의 얼굴과 목소리로 말을 주고받는 차량 앱입니다.**
 
-| 차량 앱 (Pleos 에뮬레이터, 실제 동작 화면) | 실물 스노봇 완성 목표 |
+앱은 차 신호·내비·봇 센서·운전자 말을 함께 읽고, 알려야 할 것을 근거 숫자와 함께 말합니다.
+운전자가 "응" 하면 내비 화면을 열어 줍니다. 열린 연결 규약(봇 커넥트 규약) 덕분에 어떤 봇이든 이 앱에 붙어 몸이 됩니다.
+첫 번째 봇은 눈사람 로봇 스노봇이고, **봇이 없어도 앱 화면만으로 모든 기능이 동작합니다.**
+
+| 바로 가기 | |
 |---|---|
-| ![주의 경고등이 켜지자 걱정 표정으로 쉼터 권유](docs/assets/app/2026-10-28-car-attention.png) | ![스노봇 완성 목표 그림](docs/pleos/deck/img/hero.jpg) |
-| 주행 중(D) · 연속 운전 120분 · 주의 경고 켜짐 → 걱정 표정과 "많이 피곤한가 봐요. 쉼터에서 잠깐 쉬었다 가요." | 이미지 생성 도구로 만든 목표 그림입니다. 실물은 3D 설계를 마치고 1차 출력과 부품 조립을 진행 중입니다. |
+| 심사용 APK | [`apk/SnowBotConnect_release.apk`](apk/SnowBotConnect_release.apk) |
+| 시연 영상 (2분, 소리 있음) | [`docs/demo/snowbot-connect-demo.mp4`](docs/demo/snowbot-connect-demo.mp4) |
+| 봇 커넥트 규약 v0.3 | [`docs/pleos/03-module-protocol.md`](docs/pleos/03-module-protocol.md) |
 
-**스노봇 실물이 없어도 앱만으로 모든 기능이 동작합니다.** 화면 속 가상 스노봇이 같은 표정을 짓고, 목소리는 차 스피커로 나옵니다.
+## 화면 (Pleos 에뮬레이터, 2026-11-14 녹화)
 
----
+| 비 오는 밤, 봇 센서 습도 78% → 김서림 권유 | 경고등 → "어떡해?"에 AI 가 그 경고등을 알고 대답 |
+|---|---|
+| ![김서림 권유](docs/screens/fog.jpg) | ![경고등 대답](docs/screens/ai-answer.jpg) |
+| **주행 가능 거리 38km < 목적지 52km → 대조해서 권유** | **"응 해줘" → 내비의 충전소 화면** |
+| ![남은 거리 대조](docs/screens/range.jpg) | ![내비 화면](docs/screens/navi.jpg) |
+| **봇이 연결되면 입자 구름이 그 봇의 모양으로** | **도착 인사 (기어 P)** |
+| ![봇 모양](docs/screens/bot-shape.jpg) | ![도착](docs/screens/arrive.jpg) |
 
-## 왜 만들었나
+화면 오른쪽 위는 차 상태 패널(값과 주의 표시), 가운데는 표정을 대신하는 입자 구름, 아래는 봇이 한 말입니다.
 
-- 고속도로 사망사고의 절반 이상이 졸음·전방주시 태만에서 나옵니다. 하지만 주행 중 화면 조작도, 긴 음성 안내도 운전자의 주의를 뺏습니다.
-- 옆자리 동승자와의 대화가 전화 통화보다 덜 위험한 이유는 **동승자가 도로를 보고 위험할 때 말을 멈추기 때문**입니다.
-- 그래서 스노봇은 "무엇을 말할까"보다 **"지금 말해도 되나, 얼마나 말할까"** 를 차 상태로 먼저 정합니다.
-- 차 안 음성 비서(글레오)는 묻는 말에 답하는 비서입니다. 스노봇은 차 상태를 보고 먼저 챙기는 동승자로, 차에 바로 넣기 전의 새 기능을 먼저 시험하는 자리를 맡습니다.
+## 실행 방법 (심사용)
 
-## 지금 동작하는 것
+1. Pleos Connect 에뮬레이터를 켭니다. 확인한 환경은 아래 "테스트 환경"과 같습니다.
+2. APK 를 설치하고 실행합니다.
+   ```bash
+   adb install apk/SnowBotConnect_release.apk
+   adb shell am start -n io.snowbot.hub/.MainActivity
+   ```
+3. **봇 없이 바로 되는 것:** Virtual Console 에서 차 신호를 바꾸면 앱이 스스로 말합니다.
+   - Gear P → D: 출발 인사 / D → P: 도착 인사
+   - Telltales 에서 TPMS 켜기: "타이어 공기압 경고등이 켜졌어요." 끄면 "꺼졌어요."
+   - 밤에 전조등 끄기: "밤인데 전조등이 꺼져 있어요."
+   - 와이퍼 + 창문 열기: "비 오는데 창문이 열려 있어요."
+4. **AI 대화까지 쓰려면 심사용 가상 봇과 짝을 맺습니다.** 앱 첫 화면의 칸에 넣고 "짝 맺기"를 누릅니다.
 
-| 기능 | 하는 일 | 쓰는 차량 데이터 |
+   | 기기 번호 | 등록 코드 |
+   |---|---|
+   | `JDG-01-AF37` | `E3B0853916` |
+
+   짝을 맺으면 "서버 연결됨"이 뜨고, "스노봇과 말하기" 버튼으로 말을 걸 수 있습니다(에뮬레이터 마이크 사용, 처음 누를 때 권한을 묻습니다).
+   "지금 차 어때?", "얼마나 더 갈 수 있어?" 같은 질문은 인터넷 없이 앱이 차 신호로 바로 답하고, 그 밖의 말은 AI 가 차 상태를 알고 대답합니다.
+   가상 봇은 꺼져 있어 화면 속 입자 구름만 움직입니다.
+
+## 테스트 환경
+
+| 항목 | 값 |
+|---|---|
+| 에뮬레이터 | Pleos Connect Emulator, 시스템 이미지 `system-images;android-34;pleos_car_emulator;arm64-v8a`, AVD Pleos_Connect_v2_0 (2560×1440, RAM 4GB), macOS (Apple Silicon) |
+| 앱 | `io.snowbot.hub` 0.1.0, minSdk 28 · targetSdk 34, Kotlin, Gradle 8 |
+| Pleos SDK | Vehicle 2.3.2 · NaviHelper 3.0.5 · TextToSpeech 3.3.1 · SpeechToText 3.3.1 |
+| 백엔드 | 클라우드 VM 의 Python FastAPI 중계 서버 (주소는 APK 에 들어 있음) |
+| 확인 날짜 | 2026-11-14 (release APK 새로 설치 → 짝 맺기 → 서버 연결 확인) |
+
+## 필요한 설정
+
+- **따로 설정할 것은 없습니다.** 차 권한(`CAR_*`, `NAVI_*`, `STT_SERVICE`, `TTS_SERVICE`)은 매니페스트 선언만으로 허용됩니다(공모전 개발 단계 기준, 신청 불필요).
+- 마이크 권한은 "스노봇과 말하기"를 처음 누를 때 묻습니다.
+- 인터넷이 없어도 차 살피기(스스로 알림·권유·대조·차 상태 대답)는 동작합니다. AI 대화만 인터넷이 필요합니다.
+- 직접 빌드할 때: `app/local.properties` 에 `sdk.dir` 과 `snowbot.server=https://<서버 주소>` 를 넣고 `./gradlew assembleDebug`. 자세한 것은 [`app/README.md`](app/README.md).
+
+## 앱이 하는 일
+
+앱은 네 곳(차 신호 · 내비 · 봇 센서 · 운전자 말)에서 입력을 받아 판단하고, 판단 결과를 봇의 몸에 맞게 표현합니다.
+판단은 차 안의 앱이 하므로 인터넷이 끊겨도 차 살피기는 멈추지 않습니다.
+
+| 기능 | 하는 일 | 봇이 하는 말 (예) |
 |---|---|---|
-| **상황을 보고 말하는 대화** | 말하기 버튼 → 음성 인식 → AI 대답(표정 + 목소리). 주행 중엔 짧은 두 문장, 주차 중엔 세 문장까지. 주의 경고가 켜졌거나 2시간 넘게 달렸으면 무슨 말에든 쉬자는 말이 먼저 | 기어, 주의 경고등, 연속 운전 시간 |
-| **먼저 말 거는 순간** | 출발 인사, 도착 인사, 주의 경고등 → 쉼터 권유(10분에 한 번), 2시간째부터 1시간마다 휴식 권유 | 기어 P↔D, `DRIVER_ATTENTION` |
-| **표정 동반자** | 눈꺼풀·눈썹·고개로 7가지 표정 + 고개 4방향. 주행 중에는 시험용 버튼을 숨김 | 기어 |
-| **공기질 케어** | 스노봇의 CO₂ 센서가 1,500ppm을 넘으면 걱정 표정 + 환기 제안. "공기 어때?"에 센서 값으로 대답 | 차에 없는 값을 모듈 센서로 더함 |
+| 스스로 알림 | 경고등 44종을 사람 말로, 출발·하차 점검, 2시간 연속 운전이면 휴식 권유 | "타이어 공기압 경고등이 켜졌어요." |
+| 권유 | 표정이 먼저 바뀌고, 기준을 넘으면 한마디. 운전자가 따르고 값이 실제로 내려가면 안도 표정 | "CO₂ 1,500피피엠이에요. 외기로 바꿔 볼까요?" |
+| 여러 출처 대조 | 차·내비·봇의 값을 맞춰 보고 한 곳만 봐서는 안 보이는 것을 찾음 | "남은 거리 38킬로미터, 목적지까지 52킬로미터예요. 충전소 찾아볼까요?" |
+| 수치 보고 | 왜 말했는지 근거 숫자로, 문제가 풀리면 풀렸다고 | "타이어 공기압 경고등 꺼졌어요." |
+| 말 알아듣고 실행 | 묻기·수락·거절·요청을 알아듣고 차 상태로 답하거나 내비 화면을 엶 | "응 해줘" → "내비 화면 열었어요." |
 
-출발·도착·경고·휴식 한마디는 **앱 안 규칙**이라 인터넷이 끊겨도 표정과 말풍선이 뜹니다. 목소리는 서버가 만듭니다.
-
-| 출발 | 오래 운전 | 도착 | 주차 중 대화 |
-|---|---|---|---|
-| ![출발 인사](docs/assets/app/2026-10-28-car-depart.png) | ![2시간째 휴식 권유](docs/assets/app/2026-10-28-car-long-drive.png) | ![도착 인사](docs/assets/app/2026-10-28-car-arrive.png) | ![아재개그 대화](docs/assets/app/2026-10-28-chat-pun.png) |
-
-## 구조
-
-![시스템 구성도](docs/assets/architecture/01-system-overview.png)
-
-- **차량 앱** (Kotlin, Pleos Connect): Vehicle SDK에서 차 상태를 읽고, 서버에 WebSocket(wss)으로 붙어 차 상태와 말소리를 보냅니다. 받은 표정·목소리를 화면과 차 스피커로 내보냅니다.
-- **클라우드 서버** (Python FastAPI): 앱과 스노봇을 짝지어 메시지를 건네고, 대화를 처리합니다. AI API 키는 서버에만 있습니다.
-  - 음성 인식 ElevenLabs Scribe v2 Realtime → 대답·표정 Claude Haiku 5.5 → 목소리 ElevenLabs v4 Turbo
-  - 대답 맨 앞의 표정 태그가 오면 표정을 먼저 보내고, 문장이 하나 끝날 때마다 바로 목소리로 만듭니다.
-- **스노봇 모듈** (ESP32-S3): 같은 서버에 Wi-Fi로 붙습니다. 지금은 가상 스노봇(시험 도구)으로 확인했고, 실물은 조립 중입니다.
-
-**응답 시간 (실측):** 말이 끝나고 첫 소리까지 **보통 1.5초**(17번 중간값 1.46초, 범위 1.31~2.54초), 받아 적은 글자 확정 0.2~0.35초. 목표는 3초 안입니다. ([측정 기록](docs/12-latency-measurements.md))
-
-그림 3장과 설명: [시스템 구조도](docs/pleos/06-system-architecture.md) · 발표용 [구조 PPT](docs/pleos/06-system-architecture.pptx)
+안전 알림(경고등·밤 전조등·주행 중 문 열림·오래 운전)은 "그냥 둬"로도 꺼지지 않습니다. 권유는 운전자가 "응"이나 "그냥 둬"로 정합니다.
 
 ## Pleos SDK 사용
 
-| SDK / API | 쓰는 곳 | 상태 |
+| SDK | 쓰는 곳 | 상태 |
 |---|---|---|
-| Vehicle SDK — Gear (`registerGearSelection`) | 주행/주차 판단 → 출발·도착 인사, 대화 길이. 연속 운전 시간도 기어가 P에서 바뀐 순간부터 앱이 잽니다 | ✅ 구현 |
-| Vehicle SDK — Safety (`getTelltalesInfo`, `DRIVER_ATTENTION`) | 운전자 주의 경고 → 걱정 표정·쉼터 권유 (5초마다 조회) | ✅ 구현 |
-| Vehicle SDK — Odometer (트립 운전 시간) | 휴식 권유에 쓸 예정. 값의 단위가 문서에 없어 지금은 구독만 | 🔧 구독만 |
-| NaviHelper | "응, 쉼터 넣어 줘" → 경유지 추가, 회전 안내 구간에서는 말 멈춤 | PT까지 |
-| Gleo Interface | "글레오, 스노봇한테 물어봐" — 글레오가 스노봇 기능을 부름 | PT까지 |
-| TextToSpeech · SpeechToText · FusedLocation | 인터넷 없는 대화, 주차 위치 기억 | Pleos 공개 후 |
+| Vehicle (기어·경고등·문·창문·안전벨트·공조·와이퍼·전조등·주행 가능 거리·배터리) | 판단의 입력 전부. 조회 권한만 씀 | 동작 |
+| NaviHelper | 목적지까지 거리·시간, 앞 정체 → 대조. "응" 하면 내비 화면 열기 | 동작 (길 안내 중 값은 PT 까지 확인) |
+| SpeechToText · TextToSpeech | 차 안 엔진으로 듣고 말하기. 목소리는 서버로 가지 않음 | 동작 |
+| Gleo Interface | "글레오, 스노봇한테 물어봐" | PT 까지 |
 
-## 개인정보·안전
+## 구조
 
-- 녹음을 저장하지 않습니다. 서버 기록에는 말 내용이 없고 길이·소리 크기만 남깁니다.
-- 대화 기억은 앱별 최근 8번 주고받기만, 서버 메모리에만 둡니다(재시작하면 잊음).
-- 주행 중에는 글 대신 표정 위주로, 짧게 말합니다. 시험용 버튼도 숨깁니다.
-- 서버 주소·토큰은 저장소와 소스에 넣지 않습니다(빌드할 때 `local.properties`에서 읽음).
+![차 · 앱 · 봇 · 백엔드 구성도](docs/pleos/deck/img/fig2.png)
+
+- **커넥트 앱** (`app/`, Kotlin): 차 신호 읽기, 판단(`Judgement`·`CarCoach`·`CarWatch`·`Ladder`·`DriverWords`), 표현(`Expression`), 차 상태 패널, 입자 구름(`ParticleView`), 봇 연결(`BotConnect`). 포그라운드 서비스라 화면을 닫아도 동작합니다. 단위 시험 175개.
+- **백엔드** (`server/`, Python FastAPI): 앱과 봇 사이 중계, AI 대답(차 상태 요약을 받아 숫자를 인용), 봇용 목소리. AI 키는 서버에만 있습니다. 시험 48개.
+- **봇 커넥트 규약 v0.3** ([문서](docs/pleos/03-module-protocol.md)): 봇이 자기 몸(부위·움직이는 범위·센서)을 설명하면 앱이 그 몸에 맞는 표현만 보냅니다. 가상 봇 2대(`server/tools/sim.py` 스노봇, `server/tools/led-cube.html` LED 큐브)와 봇 시험기(`server/tools/bcp_check.py`).
+- **스노봇** (`cad/`): 첫 번째 봇의 3D 설계(build123d). 실물은 출력·조립 중입니다.
+
+## 개인정보
+
+- 녹음을 저장하지 않습니다. 목소리는 차 안 엔진에서 글자로 바뀌고, 글자만 백엔드로 갑니다.
+- 봇에는 운전자가 허락한 정보만 가고, 위치는 기본으로 주지 않습니다.
+- 서버 주소·토큰·키는 소스에 넣지 않습니다(빌드할 때 `local.properties` 에서 읽음).
 
 ## 저장소 구성
 
 | 폴더 | 내용 |
 |---|---|
-| [`app/`](app/README.md) | 차량 앱 (Kotlin, Pleos Connect Emulator). `CarState`·`CarCoach`(차 상태와 먼저 말 걸기 규칙), `RelayClient`(서버 연결), `MicRecorder`·`VoicePlayer`(듣기·말하기), `SnowBotView`(화면 속 스노봇) |
-| [`server/`](server/README.md) | 중계·대화 서버 (FastAPI). `chat.py`(대화 설정·차 상태 반영), `stt.py`·`tts.py`(듣기·말하기), 자동 시험 20개, 가상 스노봇·가상 앱 시험 도구 `tools/sim.py` |
-| [`cad/`](cad/README.md) | 스노봇 3D 설계 코드 (build123d). 눈꺼풀·눈썹·고개를 움직이는 서보 4개 기구 |
-| `print/` | 3D 출력 파일 (STL) |
-| [`docs/`](docs/INDEX.md) | 기획서, 조사 자료, 설계 기록. [기획서](docs/pleos/01-proposal.md) · [기획서 PPT](docs/pleos/01-proposal.pptx) · [대화 설계](docs/11-conversation-design.md) · [차량 데이터 확인 기록](docs/pleos/05-vehicle-data.md) |
-
-## 빌드와 실행
-
-**차량 앱** (JDK 17, Android SDK, Pleos Connect Emulator 이미지 필요)
-
-```bash
-cd app
-# local.properties 를 만든다 (저장소에 없음)
-#   sdk.dir=<Android SDK 경로>
-#   snowbot.server=https://<서버 주소>
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
-에뮬레이터에서 차 상태를 바꿔 보려면 Virtual Console의 Gear Selection을 쓰거나, 디버그 명령으로 운전 시간·주의 경고를 넣습니다.
-Virtual Console 경고등 목록에는 `DRIVER_ATTENTION`이 없어서 디버그 명령으로 대신 시험했습니다.
-
-```bash
-adb shell "am start -n io.snowbot.hub/.MainActivity --es car 'gear=D add=120 attention=1'"
-```
-
-자세한 방법: [app/README.md](app/README.md)
-
-**서버** (Python 3.11)
-
-```bash
-cd server
-uv venv --python 3.11 .venv && uv pip install --python .venv -r requirements.txt pytest pytest-timeout httpx
-.venv/bin/python -m pytest -q tests     # 자동 시험 20개
-```
-
-실행·배포·시험 도구: [server/README.md](server/README.md). 대화 기능을 켜려면 서버 환경 변수에 ElevenLabs·Anthropic API 키가 필요합니다.
-
-심사용 APK는 GitHub Releases에 올릴 예정입니다.
-
-## 진행 상태
-
-| 부분 | 상태 |
-|---|---|
-| 차량 앱 · 서버 · 대화 | 에뮬레이터와 클라우드 서버에서 동작 확인 |
-| 스노봇 실물 | 3D 설계 완료, 1차 출력 도착(얼굴·눈 기구·목), 전자 부품 도착 후 조립 |
-| PT(12월)까지 | NaviHelper(쉼터 경유지·회전 구간 침묵), Gleo Interface, 실물 스노봇 연결 |
-| 그 이후 | 블루투스로 차량 앱에 직접 연결(차량 앱이 모듈 허브), 집에서 쓰는 폰 앱, 주차 위치 기억 |
+| [`apk/`](apk/) | 심사용 release APK |
+| [`app/`](app/README.md) | 커넥트 앱 소스와 빌드·시험 방법 |
+| [`server/`](server/README.md) | 백엔드, 가상 봇, 봇 시험기 |
+| [`docs/pleos/`](docs/pleos/README.md) | 기획 자료, 봇 커넥트 규약, 차량 데이터 확인 기록 |
+| [`cad/`](cad/README.md) | 스노봇 3D 설계 |

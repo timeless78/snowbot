@@ -12,9 +12,12 @@
   6. 대화: 앱이 listen_start → 마이크 PCM 바이너리 조각들 → listen_end 를 보내면 서버가 글자로 바꾸고(STT),
      Claude 가 대답·표정을 정해(chat) 표정은 기기에, 말은 5번처럼 목소리로 보낸다. chat 메시지로 글자를 바로 보내도 된다.
      앱이 직접 듣는 경우(차의 Pleos 듣기)는 listen_start 에 stt="app" 을 붙여 하던 말만 멈추고, 들은 글자는 chat 으로 보낸다.
-  7. 차량 앱은 car 메시지로 차 상태(기어·연속 운전 분·주의 경고·운전 부담 load 0~3)를 보낸다. 대답할 때 상황에 넣고,
-     운전 부담으로 대답 길이를 정한다(LOAD_SENTENCES). load 가 3(바쁨)이 되는 순간 그 앱의 대답·목소리를 끊는다
-     — 앱이 차 신호로 판단하고(DrivingLoad), 서버는 그 값만 따른다.
+  8. 봇 커넥트 규약 v0.3 (docs/pleos/03-module-protocol.md): 봇의 hello(몸 부위·센서)는 기억했다가 앱에 알리고,
+     observe(센서 관찰)도 앱에 건넨다. 대답의 표정은 앱과 짝 맺은 켜진 봇 모두에 express(v0.3 + v0.1 필드)로 보낸다.
+     Claude 에게는 연결된 봇들이 할 수 있는 표정·몸짓을 상황에 적어 준다.
+  7. 차량 앱은 car 메시지로 차 상태(기어·연속 운전 분·주의 경고·켜진 경고등·차 요약 summary)를 보낸다.
+     대답할 때 상황에 넣어 AI 가 차 상태를 알고 말한다. 대답 길이는 주행/주차로 정한다
+     (주행 DRIVING_SENTENCES · 주차 PARKED_SENTENCES).
 
 실행: uvicorn --factory snowbot_server.main:create_app --port 3000   (DB 경로는 SNOWBOT_DB)
 """
@@ -45,12 +48,36 @@ NOT_HEARD = "[worried none] 미안해요, 잘 못 들었어요. 다시 말해 �
 BRAIN_FAILED = "[worried none] 지금은 생각이 잘 안 나요. 잠시 뒤에 다시 말해 줘요."
 WEEKDAYS = "월화수목금토일"
 GEARS = ("P", "R", "N", "D")
-# 운전 부담(앱의 DrivingLoad) → 대답 문장 수. 0 여유 3 · 1 보통 2 · 2 주의 1 · 3 바쁨 1 (바쁠 때 물으면 한 문장)
-# docs/pleos/07-dev-plan.md 2-2절 표의 "수다 단계 3(보통)" 줄. 수다 단계는 다음 단계에서 더한다.
-LOAD_SENTENCES = {0: 3, 1: 2, 2: 1, 3: 1}
-BUSY = 3
-LOAD_WORDS = {2: "운전에 주의가 필요한 때(비·밤 등). 한 문장으로.",
-              3: "운전이 바쁜 순간(차선 변경·회전·후진). 한 문장으로 아주 짧게."}
+MAX_SUMMARY = 400   # 앱이 보내는 차 요약 글의 최대 길이
+V01_HEADS = {"look_left": "turn_left", "look_right": "turn_right"}   # v0.1 봇이 아는 고개 이름
+
+
+def bot_body(hello: dict) -> tuple[str, list[str], list[str]]:
+    """hello(v0.3 또는 v0.1) → (이름, 표정 목록, 몸짓 목록)."""
+    if "expressions" in hello:      # v0.3
+        ex = hello.get("expressions") or {}
+        name = (hello.get("bot") or {}).get("name") or (hello.get("bot") or {}).get("model") or "봇"
+        return name, list(ex.get("emotions") or []), list(ex.get("gestures") or [])
+    for cap in hello.get("capabilities") or []:   # v0.1
+        if cap.get("id") == "express":
+            heads = [{"turn_left": "look_left", "turn_right": "look_right"}.get(h, h) for h in cap.get("head") or []]
+            return hello.get("model") or "봇", list(cap.get("expr") or []), heads
+    return hello.get("model") or "봇", ["neutral"], []
+
+
+def body_line(hello: dict) -> str:
+    name, emotions, gestures = bot_body(hello)
+    return f"{name}(표정 {','.join(emotions) or 'neutral'}; 몸짓 {','.join(gestures) or '없음'})"
+
+
+def express_msg(expr: str, head: str | None, hello: dict | None) -> dict:
+    """봇 하나에 보낼 표정: v0.3 필드(emotion·gesture)와 v0.1 필드(expr·head)를 같이. 봇에 없는 몸짓은 뺀다."""
+    gesture = head if hello is None or head in bot_body(hello)[2] else None   # hello 를 모르면 그대로 보낸다
+    msg = {"bcp": "0.3", "type": "express", "emotion": expr, "intensity": 0.6, "expr": expr}
+    if gesture:
+        msg["gesture"] = gesture
+        msg["head"] = V01_HEADS.get(gesture, gesture)
+    return msg
 SAID_FIRST_FRESH = 600   # 스노봇이 먼저 한 말을 이 초 동안 상황에 넣는다
 
 AUTH_TIMEOUT = 10
@@ -69,7 +96,7 @@ class Hub:
         self.hello: dict[str, dict] = {}
         self.env: dict[str, dict] = {}                 # 기기별 마지막 공기·온도 값
         self.talks: dict[str, Conversation] = {}       # 앱별 최근 대화
-        self.cars: dict[str, dict] = {}                # 앱별 마지막 차 상태 (gear, driving_min, attention, load)
+        self.cars: dict[str, dict] = {}                # 앱별 마지막 차 상태 (gear, driving_min, attention, warnings, summary)
         self.said_first: dict[str, tuple[str, float]] = {}   # 앱별 스노봇이 먼저 한 마지막 말과 시각
         self.apps: dict[str, set[WebSocket]] = {}
         self.speaking: dict[WebSocket, asyncio.Task] = {}
@@ -139,10 +166,7 @@ class Hub:
         return None if car is None or car["gear"] not in GEARS else car["gear"] != "P"
 
     def sentence_limit(self, app_id: str) -> int:
-        """대답 문장 수: 운전 부담을 받았으면 그것으로, 없으면 주행/주차로, 차 상태를 모르면 기본."""
-        car = self.cars.get(app_id)
-        if car is not None and car.get("load") in LOAD_SENTENCES:
-            return LOAD_SENTENCES[car["load"]]
+        """대답 문장 수: 주행 중이면 짧게, 주차 중이면 조금 더. 차 상태를 모르면 기본."""
         driving = self.driving(app_id)
         return MAX_SENTENCES if driving is None else DRIVING_SENTENCES if driving else PARKED_SENTENCES
 
@@ -151,21 +175,31 @@ class Hub:
         now = datetime.now(ZoneInfo("Asia/Seoul"))
         parts = [f"지금 {now:%Y-%m-%d}({WEEKDAYS[now.weekday()]}) {now:%H:%M}.",
                  "스노봇 몸체 켜짐." if device_id in self.devices else "스노봇 몸체 꺼짐(화면 속 스노봇만 있음)."]
-        env = self.env.get(device_id) or {}
+        env: dict = {}
+        for d in (self.store.devices_of(app_id) if app_id else [device_id]):
+            env.update(self.env.get(d) or {})       # 어느 봇이 느꼈든 같은 차 안
         if isinstance(env.get("co2"), (int, float)):
             parts.append(f"차 안 CO₂ {env['co2']:.0f}ppm.")
         if isinstance(env.get("temp"), (int, float)):
             parts.append(f"차 안 온도 {env['temp']:.1f}°C.")
+        if isinstance(env.get("humidity"), (int, float)):
+            parts.append(f"차 안 습도 {env['humidity']:.0f}%.")
         if len(parts) == 2:
             parts.append("센서 값 아직 없음.")
+        bodies = [body_line(self.hello[d]) for d in (self.store.devices_of(app_id) if app_id else [device_id])
+                  if d in self.devices and d in self.hello]
+        if bodies:
+            parts.append("연결된 봇: " + " / ".join(bodies) + ".")
         car = self.cars.get(app_id) if app_id else None
         if car is not None and car["gear"] in GEARS:
             parts.append("차 주차 중(P)." if car["gear"] == "P"
                          else f"차 주행 중({car['gear']}). 출발한 지 {car['driving_min']}분.")
             if car["attention"]:
                 parts.append("차가 운전자 주의 경고등을 켰음.")
-            if car.get("load") in LOAD_WORDS:
-                parts.append(LOAD_WORDS[car["load"]])
+            if car.get("warnings"):
+                parts.append("켜진 경고등: " + ", ".join(car["warnings"]) + ".")
+            if car.get("summary"):
+                parts.append("차 상태: " + car["summary"] + ".")
         said = self.said_first.get(app_id) if app_id else None
         if said is not None and time.monotonic() - said[1] < SAID_FIRST_FRESH:
             parts.append(f'스노봇이 먼저 한 말: "{said[0]}"')
@@ -272,7 +306,9 @@ def create_app(db_path: str | None = None, tts: TtsFn | None = None,
                 if msg.get("type") == "hello":
                     hub.hello[device_id] = msg
                 elif msg.get("type") == "event" and msg.get("cap") == "env" and isinstance(msg.get("data"), dict):
-                    hub.env[device_id] = msg["data"]
+                    hub.env[device_id] = {**hub.env.get(device_id, {}), **msg["data"]}
+                elif msg.get("type") == "observe" and msg.get("sensor") == "env" and isinstance(msg.get("data"), dict):
+                    hub.env[device_id] = {**hub.env.get(device_id, {}), **msg["data"]}
                 msg["device_id"] = device_id
                 await hub.to_apps_of(device_id, msg)
         except WebSocketDisconnect:
@@ -318,9 +354,10 @@ def create_app(db_path: str | None = None, tts: TtsFn | None = None,
             async def show(f: Face) -> None:
                 timing["face_ms"] = round((time.monotonic() - heard_at) * 1000)
                 await hub.send(ws, {"type": "reply_start", "device_id": device_id, "expr": f.expr, "head": f.head})
-                device_ws = hub.devices.get(device_id)
-                if device_ws is not None:
-                    await hub.send(device_ws, {"type": "express", "expr": f.expr, **({"head": f.head} if f.head else {})})
+                for d in store.devices_of(app_id):          # 짝 맺은 켜진 봇 모두가 같은 감정을 자기 몸으로
+                    device_ws = hub.devices.get(d)
+                    if device_ws is not None:
+                        await hub.send(device_ws, express_msg(f.expr, f.head, hub.hello.get(d)))
                 speak(device_id, voice, own_voice, lines)
 
             async def canned(raw: str) -> None:
@@ -416,21 +453,16 @@ def create_app(db_path: str | None = None, tts: TtsFn | None = None,
                 kind = msg.get("type")
                 if kind == "car":                 # 차 상태: 기기로 보내지 않고 대화 상황에만 쓴다
                     gear, minutes = msg.get("gear"), msg.get("driving_min")
-                    load = msg.get("load")
-                    load = load if isinstance(load, int) and not isinstance(load, bool) and load in LOAD_SENTENCES else None
-                    was_busy = (hub.cars.get(app_id) or {}).get("load") == BUSY
+                    warnings = msg.get("warnings")
+                    warnings = [w.strip()[:30] for w in warnings if isinstance(w, str) and w.strip()][:8] \
+                        if isinstance(warnings, list) else []
+                    summary = msg.get("summary")
+                    summary = summary.strip()[:MAX_SUMMARY] if isinstance(summary, str) else ""
+                    # 오래된 앱이 보내는 load(바쁜 정도)는 무시한다 — 그 기능은 없앴다
                     hub.cars[app_id] = {"gear": gear if gear in GEARS else "?",
                                         "driving_min": max(0, min(minutes, 10_000)) if isinstance(minutes, int) else 0,
-                                        "attention": msg.get("attention") is True, "load": load}
-                    if load == BUSY and not was_busy:   # 운전이 바빠짐: 생각 중인 대답과 하던 말을 버린다
-                        if turn is not None:
-                            turn.cancel()
-                        hub.stop_speaking(ws)
-                        for device_id in store.devices_of(app_id):
-                            device_ws = hub.devices.get(device_id)
-                            if device_ws is not None:
-                                hub.stop_speaking(device_ws)
-                        print(f"busy app={app_id} → 말 멈춤", flush=True)
+                                        "attention": msg.get("attention") is True,
+                                        "warnings": warnings, "summary": summary}
                     continue
                 target = msg.pop("device_id", None)
                 voice = msg.pop("voice", "device")

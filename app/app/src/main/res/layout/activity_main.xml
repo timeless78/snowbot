@@ -13,7 +13,7 @@
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <io.snowbot.hub.SnowBotView
+        <io.snowbot.hub.ParticleView
             android:id="@+id/snowbot"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -64,12 +64,35 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <!-- 봇 커넥트 규약: 짝 맺은 봇들 (이름 · 켜짐 · 몸 · 센서 · 받는 정보) -->
+            <TextView
+                android:id="@+id/bots"
+                style="@style/Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/bots_none" />
+
             <TextView
                 android:id="@+id/car"
                 style="@style/Body"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/car_unknown" />
+
+            <!-- 근거 숫자: 스노봇이 수치를 말한 순간 몇 초 크게 보인다 -->
+            <TextView
+                android:id="@+id/flash"
+                style="@style/Flash"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <!-- 차 상태 패널: 항목별 값 · 정상/주의 -->
+            <TextView
+                android:id="@+id/panel"
+                style="@style/Panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
             <!-- 짝 맺기: 토큰이 없을 때만. 주행 중에는 숨긴다 -->
             <LinearLayout
@@ -158,6 +181,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/air_unknown" />
+
+            <Button
+                android:id="@+id/add_bot_button"
+                style="@style/Quiet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/add_bot" />
 
             <Button
                 android:id="@+id/unpair_button"

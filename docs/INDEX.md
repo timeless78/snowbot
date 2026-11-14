@@ -35,6 +35,7 @@
 | [docs/01-concept.md](01-concept.md) | 출발점(ChatGPT 대화 정리), 요구사항, 가능성 판단, 구조, **디자인 결정(5절)**, 비용, 제작 순서, 남은 결정 |
 | [docs/design-gallery.html](design-gallery.html) | **디자인 기록 웹 페이지** — 그림 20장을 만든 순서대로 (아티팩트: https://claude.ai/artifact/3p3FvAGrNpDrctKtrsg7o7). 압축 이미지는 docs/assets/web/ |
 | [docs/parts-list.html](parts-list.html) | 부품 목록 웹 페이지 (아티팩트: https://claude.ai/artifact/NYE35yKLxHQJ84YuXvVUU7). 디바이스마트 기준 내용이라 알리 장바구니는 03 문서를 본다 |
+| [docs/assembly.html](assembly.html) | **조립 안내 (2026-11-07 판)** — 부품 확인(번호 붙인 사진)·실측·공차 판·브레드보드 서보 시험(컴퓨터=XIAO, 충전기=서보)·눈과 목 가조립. 단어 설명 풍선, 기록 복사. 원본 `assets/assembly/template.html` → `build.py` 로 한 파일 생성 |
 | [docs/05-cad-stages.md](05-cad-stages.md) | **3D 설계 단계** — 기준 그림 비율(키 152mm)로 1~5단계 완료. **지금은 기능 확인용 시제품, 기능 완성 뒤 기준 그림과 똑같은 완성품** (맞출 디테일 목록 포함) |
 | [docs/06-print-order.md](06-print-order.md) | **출력 주문표** — 1차(시험)·2차(본) 묶음, 색·메모, 업체 질문, 공차 시험 판 쓰는 법, 추가로 살 재료. 파일은 `print/` |
 | [cad/](../cad/README.md) | **3D 설계 코드** (build123d) — 1차 배치 모델, 미리보기 `cad/out/preview.png` |

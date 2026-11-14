@@ -229,9 +229,9 @@ def main() -> None:
 <body>
 <div class="wrap">
 <header class="top">
-  <div class="eyebrow">Pleos 차량용 앱 공모전 · 접수양식 2장 「앱 프로젝트 소개」 + 봇 커넥트 규약 · 2026-11-04</div>
+  <div class="eyebrow">Pleos 차량용 앱 공모전 · 접수양식 2장 「앱 프로젝트 소개」 + 봇 커넥트 규약 · 2026-11-09</div>
   <h1>스노봇 기획서 검토판</h1>
-  <p class="lead">11/4 방향 결정을 반영한 기획서 4판과 봇 커넥트 규약(BCP) v0.3입니다. 이 앱은 감성 봇을 차에 연결하는 커넥트 앱이고, 중심 기능은 차와 봇이 정보와 기능을 주고받는 규약입니다: 연결 · 봇 설명 · 정보와 해석 · 피드백.</p>
+  <p class="lead">11/9 구현을 반영한 기획서와 봇 커넥트 규약(BCP) v0.3입니다. 이 앱은 감성 봇을 차에 연결하고, 운전자와 말을 주고받으며 차 상태를 보고·권고·실행합니다: 입력 · 판단 · 표현.</p>
   {legend}
   <nav class="topnav" aria-label="문서"><a href="#ask">정한 것</a><a href="#plan">1부 기획서</a><a href="#spec">2부 연결 규약</a></nav>
 </header>

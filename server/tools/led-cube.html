@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LED 큐브 — 봇 커넥트 규약 가상 봇</title>
+<!--
+  봇 커넥트 규약(BCP) v0.3 의 두 번째 가상 봇 (docs/pleos/03-module-protocol.md 3-4절).
+  얼굴·고개 없이 빛 고리 12개 + 효과음 + 습도·온도 센서만 있다. 스노봇과 같은 감정을 빛으로 표현한다.
+  쓰는 법: 브라우저로 이 파일을 연다 → 서버 주소(wss://…/ws), 기기 번호, 기기 키를 넣고 [연결].
+  자동 연결: led-cube.html#server=wss://…/ws&dev=LED-01-XXXX&key=… (로컬에서만. 키가 주소에 남으니 공유하지 말 것)
+  기기 번호·키는 서버에서 `python -m snowbot_server.manage add-device --prefix LED-01` 로 만든다.
+  값은 이 브라우저(localStorage)에만 저장된다.
+-->
+<style>
+:root { --bg:#0d1117; --panel:#161b22; --line:#2a313c; --ink:#e6edf3; --muted:#8b949e; --accent:#ff8a00; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Apple SD Gothic Neo","Noto Sans KR",sans-serif; }
+.wrap { max-width:860px; margin:0 auto; padding:20px; display:grid; gap:16px; grid-template-columns: 1fr 1fr; }
+@media (max-width:720px) { .wrap { grid-template-columns:1fr; } }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+h1 { font-size:20px; margin:0 0 4px; grid-column:1/-1; }
+.sub { color:var(--muted); font-size:13px; grid-column:1/-1; margin-top:-10px; }
+.cube { display:grid; place-items:center; min-height:320px; }
+.ring { position:relative; width:240px; height:240px; border-radius:28px; background:#05070a; border:1px solid var(--line); }
+.led { position:absolute; width:26px; height:26px; border-radius:50%; background:#222; transform:translate(-50%,-50%); transition:background .25s, box-shadow .25s; }
+.name { margin-top:14px; text-align:center; color:var(--muted); font-size:14px; }
+.state { font-size:22px; text-align:center; margin-top:6px; }
+label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+input[type=text], input[type=password] { width:100%; background:#0d1117; color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px; }
+input[type=range] { width:100%; }
+button { margin-top:12px; background:var(--accent); color:#111; border:0; border-radius:6px; padding:9px 14px; font-weight:700; cursor:pointer; }
+button:focus-visible, input:focus-visible { outline:2px solid #58a6ff; outline-offset:2px; }
+.status { font-size:13px; margin-top:8px; color:var(--muted); }
+.topics { font-size:13px; line-height:1.7; }
+.topics b { color:var(--ink); font-weight:600; }
+.log { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--muted); max-height:180px; overflow:auto; white-space:pre-wrap; }
+.sensor-val { font-variant-numeric:tabular-nums; color:var(--ink); }
+@media (prefers-reduced-motion: reduce) { .led { transition:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LED 큐브 (가상 봇)</h1>
+  <div class="sub">봇 커넥트 규약 v0.3 · 몸: 빛 고리 12개 · 효과음 · 센서: 습도 · 온도</div>
+
+  <div class="panel cube">
+    <div>
+      <div class="ring" id="ring" aria-label="빛 고리"></div>
+      <div class="state" id="state">연결 전</div>
+      <div class="name" id="reason">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <form id="conn">
+      <label for="server">서버 (wss://…/ws)</label>
+      <input type="text" id="server" placeholder="wss://<서버-IP>.sslip.io/ws" autocomplete="off">
+      <label for="dev">기기 번호</label>
+      <input type="text" id="dev" placeholder="LED-01-XXXX" autocomplete="off">
+      <label for="key">기기 키</label>
+      <input type="password" id="key" autocomplete="off">
+      <button type="submit" id="go">연결</button>
+      <div class="status" id="status">연결 안 됨</div>
+    </form>
+    <label for="hum">습도 <span class="sensor-val" id="humv">55</span>% (봇 센서)</label>
+    <input type="range" id="hum" min="20" max="95" value="55">
+    <label for="tmp">온도 <span class="sensor-val" id="tmpv">22.0</span>°C (봇 센서)</label>
+    <input type="range" id="tmp" min="0" max="60" step="0.5" value="22">
+  </div>
+
+  <div class="panel">
+    <div style="font-weight:700;margin-bottom:6px">허브가 허락한 차 정보</div>
+    <div class="topics" id="granted">—</div>
+    <div style="font-weight:700;margin:12px 0 6px">받은 차 정보 (context)</div>
+    <div class="topics" id="topics">—</div>
+  </div>
+
+  <div class="panel">
+    <div style="font-weight:700;margin-bottom:6px">주고받은 메시지</div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var N = 12, leds = [];
+  for (var i = 0; i < N; i++) {
+    var d = document.createElement("div"); d.className = "led";
+    var a = (i / N) * Math.PI * 2 - Math.PI / 2;
+    d.style.left = (50 + 38 * Math.cos(a)) + "%"; d.style.top = (50 + 38 * Math.sin(a)) + "%";
+    $("ring").appendChild(d); leds.push(d);
+  }
+
+  // 공통 감정 → 빛 (규약 6-1 표의 LED 큐브 열)
+  var LOOK = {
+    neutral: { color: "#cfd8e3", pattern: "solid", level: 0.35, word: "보통" },
+    happy:   { color: "#ffd23f", pattern: "rise",  level: 1.0,  word: "기쁨" },
+    greet:   { color: "#ffd23f", pattern: "blink2", level: 1.0, word: "인사" },
+    worried: { color: "#ff8a00", pattern: "breathe", level: 1.0, word: "걱정" },
+    sleepy:  { color: "#4c8dff", pattern: "slow",  level: 0.8,  word: "졸림" },
+    alert:   { color: "#ffffff", pattern: "flash", level: 1.0,  word: "놀람" },
+    guard:   { color: "#a26bff", pattern: "solid", level: 0.7,  word: "삐짐" }
+  };
+  var EMOTIONS = ["neutral", "happy", "worried", "alert", "sleepy"];   // hello 에 선언한 것만
+  var FALLBACK = { greet: "happy", guard: "neutral" };
+  var current = { color: "#cfd8e3", pattern: "solid", level: 0.35 }, t0 = performance.now();
+
+  function hexToRgb(h) { var n = parseInt(h.replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function paint(now) {
+    var t = (now - t0) / 1000, k = current.level, p = current.pattern;
+    if (p === "breathe") k *= 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 2.4));
+    else if (p === "slow") k *= 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * 1.0));
+    else if (p === "blink2") k *= (t < 1.2 && Math.floor(t * 3.3) % 2 === 0) ? 1 : (t < 1.2 ? 0.1 : 0.6);
+    else if (p === "flash") k *= t < 0.6 ? (Math.floor(t * 10) % 2 === 0 ? 1 : 0.15) : 0.7;
+    else if (p === "rise") k *= Math.min(1, 0.3 + t * 1.5);
+    var c = hexToRgb(current.color);
+    for (var i = 0; i < N; i++) {
+      var kk = p === "spin" ? k * (0.2 + 0.8 * ((Math.floor(t * 8) - i + 120) % N === 0 ? 1 : 0.15)) : k;
+      var col = "rgb(" + Math.round(c[0] * kk) + "," + Math.round(c[1] * kk) + "," + Math.round(c[2] * kk) + ")";
+      leds[i].style.background = col;
+      leds[i].style.boxShadow = kk > 0.2 ? "0 0 " + Math.round(18 * kk) + "px " + col : "none";
+    }
+    requestAnimationFrame(paint);
+  }
+  requestAnimationFrame(paint);
+
+  var audio = null;
+  function chime(kind) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      var notes = kind === "alert" ? [880, 660] : kind === "worried" ? [523, 392] : [660, 880];
+      notes.forEach(function (f, i) {
+        var o = audio.createOscillator(), g = audio.createGain();
+        o.frequency.value = f; o.type = "sine";
+        g.gain.setValueAtTime(0.0001, audio.currentTime + i * 0.18);
+        g.gain.exponentialRampToValueAtTime(0.25, audio.currentTime + i * 0.18 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + i * 0.18 + 0.16);
+        o.connect(g); g.connect(audio.destination); o.start(audio.currentTime + i * 0.18); o.stop(audio.currentTime + i * 0.18 + 0.2);
+      });
+    } catch (e) { console.log("chime", e); }
+  }
+
+  function show(emotion, reason) {
+    var e = EMOTIONS.indexOf(emotion) >= 0 ? emotion : (FALLBACK[emotion] || "neutral");
+    var l = LOOK[e];
+    current = { color: l.color, pattern: l.pattern, level: l.level }; t0 = performance.now();
+    $("state").textContent = l.word + " (" + e + ")";
+    $("reason").textContent = reason ? "이유: " + reason : " ";
+    if (e === "worried" || e === "alert" || e === "happy") chime(e);
+  }
+
+  function log(dir, obj) {
+    var line = new Date().toLocaleTimeString() + " " + dir + " " + JSON.stringify(obj);
+    var box = $("log"); box.textContent = line + "\n" + box.textContent.slice(0, 4000);
+  }
+
+  var TOPIC_WORDS = { "car.motion": "주행", "car.outside": "비·밤", "car.cabin": "실내",
+    "car.energy": "연료", "car.warning": "경고등", "trip": "출발·도착", "driver.state": "운전자 상태" };
+  var topics = {};
+  function renderTopics() {
+    var keys = Object.keys(topics);
+    $("topics").innerHTML = keys.length ? keys.map(function (k) {
+      return "<b>" + (TOPIC_WORDS[k] || k) + "</b> " + escapeHtml(JSON.stringify(topics[k]));
+    }).join("<br>") : "—";
+  }
+  function escapeHtml(s) { return s.replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  var HELLO = {
+    bcp: "0.3", type: "hello",
+    bot: { id: "", model: "LED Cube (sim)", maker: "demo", fw: "sim", name: "큐브" },
+    place: { where: "dashboard_right", facing: "cabin", power: "usb" },
+    parts: [ { id: "ring", kind: "light", leds: 12, color: "rgb", patterns: ["solid", "breathe", "blink", "spin"] },
+             { id: "buzz", kind: "speaker", voice: "chime" } ],
+    sensors: [ { id: "env", measures: [ { name: "humidity", unit: "%" }, { name: "temp", unit: "C" } ], period_s: 10 } ],
+    expressions: { emotions: EMOTIONS, gestures: [] },
+    actions: [ { id: "glow", params: { color: "string", pattern: "string" } } ],
+    wants: ["car.motion", "car.outside", "car.cabin", "trip"]
+  };
+
+  var ws = null, timer = null;
+  function observe() {
+    if (!ws || ws.readyState !== 1) return;
+    var msg = { bcp: "0.3", type: "observe", sensor: "env",
+      data: { humidity: Number($("hum").value), temp: Number($("tmp").value) }, ts: Date.now() };
+    ws.send(JSON.stringify(msg)); log("→", msg);
+  }
+  $("hum").addEventListener("input", function () { $("humv").textContent = this.value; });
+  $("tmp").addEventListener("input", function () { $("tmpv").textContent = Number(this.value).toFixed(1); });
+  $("hum").addEventListener("change", observe);
+  $("tmp").addEventListener("change", observe);
+
+  // 자동 연결(로컬 파일 전용): led-cube.html#server=wss://…/ws&dev=LED-01-XXXX&key=…
+  var auto = {};
+  location.hash.replace(/^#/, "").split("&").forEach(function (kv) { var p = kv.split("="); if (p[1]) auto[p[0]] = decodeURIComponent(p[1]); });
+  try {
+    $("server").value = localStorage.getItem("cube.server") || "";
+    $("dev").value = localStorage.getItem("cube.dev") || "";
+    $("key").value = localStorage.getItem("cube.key") || "";
+  } catch (e) {}
+
+  if (auto.server) $("server").value = auto.server;
+  if (auto.dev) $("dev").value = auto.dev;
+  if (auto.key) $("key").value = auto.key;
+  if (auto.server && auto.dev && auto.key) setTimeout(function () { $("go").click(); }, 300);
+  if (auto.hum) { $("hum").value = auto.hum; $("humv").textContent = auto.hum; }
+
+  $("conn").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var server = $("server").value.trim(), dev = $("dev").value.trim(), key = $("key").value.trim();
+    try { localStorage.setItem("cube.server", server); localStorage.setItem("cube.dev", dev); localStorage.setItem("cube.key", key); } catch (e) {}
+    if (ws) ws.close();
+    chime("happy");
+    ws = new WebSocket(server);
+    $("status").textContent = "연결 중…";
+    ws.onopen = function () { ws.send(JSON.stringify({ type: "auth", device_id: dev, key: key })); };
+    ws.onmessage = function (ev) {
+      if (typeof ev.data !== "string") return;
+      var msg = JSON.parse(ev.data); log("←", msg);
+      // 규약 2-3: ping 에 pong, id 가 붙은 지시에는 ack (봇 시험기 9절)
+      if (msg.type === "ping") { ws.send(JSON.stringify({ bcp: "0.3", type: "pong", id: msg.id })); return; }
+      if (msg.id !== undefined && ["express", "gesture", "pose", "action", "say", "listen", "mode"].indexOf(msg.type) >= 0) {
+        var ack = { bcp: "0.3", type: "ack", id: msg.id };
+        if (msg.type === "express") { var e = msg.emotion || msg.expr || "neutral"; ack.emotion = EMOTIONS.indexOf(e) >= 0 ? e : "neutral"; }
+        setTimeout(function () { if (ws && ws.readyState === 1) ws.send(JSON.stringify(ack)); }, 0);
+      }
+      if (msg.type === "auth_ok") {
+        $("status").textContent = "연결됨 · " + dev;
+        ["server", "dev", "key"].forEach(function (id) { var el = $(id); el.style.display = "none"; el.previousElementSibling.style.display = "none"; });
+        $("go").textContent = "다시 연결";   // 화면 녹화에 서버 주소·키가 보이지 않게
+        HELLO.bot.id = dev; ws.send(JSON.stringify(HELLO)); log("→", { type: "hello" });
+        observe(); clearInterval(timer); timer = setInterval(observe, 10000);
+        show("neutral");
+      } else if (msg.type === "welcome") {
+        $("granted").textContent = (msg.granted || []).map(function (k) { return TOPIC_WORDS[k] || k; }).join(" · ") || "—";
+      } else if (msg.type === "context") {
+        topics[msg.topic] = msg.data; renderTopics();
+      } else if (msg.type === "express") {
+        show(msg.emotion || msg.expr || "neutral", msg.reason);
+      } else if (msg.type === "pose" && msg.targets) {
+        if (msg.targets["ring.color"]) current.color = msg.targets["ring.color"];
+        if (msg.targets["ring.pattern"]) current.pattern = msg.targets["ring.pattern"];
+      } else if (msg.type === "action" && msg.name === "glow") {
+        var p = msg.params || {}; current = { color: p.color || "#ffffff", pattern: p.pattern || "solid", level: 1 }; t0 = performance.now();
+      }
+    };
+    var mine = ws;
+    ws.onclose = function (ev) {
+      $("status").textContent = "끊김 (" + ev.code + ") · 2초 뒤 다시 연결"; clearInterval(timer); show("neutral");
+      // 끊기면 다시 붙어 hello 부터 (규약 2-4). 사용자가 "다시 연결"을 눌러 바꾼 소켓이면 건너뜀
+      setTimeout(function () { if (ws === mine) $("go").click(); }, 2000);
+    };
+    ws.onerror = function () { $("status").textContent = "연결 오류"; };
+  });
+})();
+</script>
+</body>
+</html>

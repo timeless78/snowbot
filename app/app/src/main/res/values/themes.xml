@@ -42,6 +42,22 @@
         <item name="android:textColor">#1A0E06</item>
         <item name="android:backgroundTint">@color/carrot</item>
     </style>
+    <!-- 차 상태 패널: 항목별 값과 주의 표시. 움직임은 작게 둔다(주행 중 시선을 끌지 않게) -->
+    <style name="Panel">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/muted</item>
+        <item name="android:lineSpacingExtra">4dp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:background">@color/surface</item>
+    </style>
+    <!-- 판단이 근거 숫자를 말한 순간 그 수치를 잠깐 크게 -->
+    <style name="Flash">
+        <item name="android:textSize">34sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/carrot</item>
+        <item name="android:layout_marginTop">16dp</item>
+    </style>
     <style name="Quiet">
         <item name="android:textSize">20sp</item>
         <item name="android:minHeight">76dp</item>

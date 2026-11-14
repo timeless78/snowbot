@@ -9,7 +9,8 @@ from starlette.websockets import WebSocketDisconnect
 import asyncio
 
 from snowbot_server import chat
-from snowbot_server.chat import Face, Reply, claude_reply, parse_reply, split_reply
+from snowbot_server.chat import (DRIVING_SENTENCES, MAX_SENTENCES, PARKED_SENTENCES, Face, Reply, claude_reply,
+                                 parse_reply, split_reply)
 from snowbot_server.main import CLOSE_DENIED, CLOSE_REPLACED, create_app
 from snowbot_server.store import Store
 
@@ -170,6 +171,14 @@ def connect_pair(env):
         yield app, dev
 
 
+def face_msg(expr, head=None):
+    """서버가 대답 표정을 봇에 보내는 모양 (규약 v0.3 + v0.1 필드)."""
+    msg = {"bcp": "0.3", "type": "express", "emotion": expr, "intensity": 0.6, "expr": expr}
+    if head:
+        msg.update(gesture=head, head=head)
+    return msg
+
+
 def read_speech(ws):
     """audio_start → 소리 조각들 → audio_end 를 읽어 (글자, 소리) 를 돌려준다."""
     start = ws.receive_json()
@@ -251,7 +260,7 @@ def test_app_that_listens_itself_sends_text_and_hears_text_back(env):
         assert said == ["좋아요!", "같이 가요."]
         assert others[0] == {"type": "reply_start", "device_id": env.a["id"], "expr": "happy", "head": "nod"}
         assert all(m["type"] != "heard" for m in others)   # 서버는 듣지 않았다
-        assert dev.receive_json() == {"type": "express", "expr": "happy", "head": "nod"}
+        assert dev.receive_json() == face_msg("happy", "nod")
         assert env.brain.asked[0][1].endswith("[운전자] 공기 어때")
 
 
@@ -280,7 +289,7 @@ def test_listen_then_reply_with_face_and_voice(env):
         reply = app.receive_json()
         assert reply["type"] == "reply" and (reply["text"], reply["expr"], reply["head"]) == ("좋아요! 같이 가요.", "happy", "nod")
         assert set(reply["timing"]) == {"stt_ms", "face_ms", "llm_ms"}
-        assert dev.receive_json() == {"type": "express", "expr": "happy", "head": "nod"}
+        assert dev.receive_json() == face_msg("happy", "nod")
         assert spoken(read_speech(dev)[1]) == len("좋아요!") + len("같이 가요.")   # 두 문장 모두 한 번의 말로
         assert env.brain.asked[0][1].endswith("[운전자] 공기 어때")
 
@@ -311,7 +320,7 @@ def test_silence_gets_a_not_heard_reply_without_claude(env):
         assert "못 들었어요" in app.receive_json()["text"]          # reply
         assert spoken(read_speech(app)[1]) == len("미안해요, 잘 못 들었어요. 다시 말해 줄래요?")  # 목소리는 앱으로
         assert env.brain.asked == []
-        assert dev.receive_json() == {"type": "express", "expr": "worried"}
+        assert dev.receive_json() == face_msg("worried")
 
 
 def test_claude_failure_still_answers(env):
@@ -388,6 +397,20 @@ def test_car_state_shapes_the_situation_and_reply_length(env):
         assert "차 " not in env.brain.asked[0][1]
 
 
+def test_lit_warnings_reach_the_situation(env):
+    with connect_pair(env) as (app, dev):
+        app.send_json({"type": "car", "gear": "D", "driving_min": 20, "attention": False,
+                       "warnings": ["엔진 과열", "타이어 공기압"]})
+        chat_once(env, app, dev, "왜 경고등 켜졌어?")
+        app.send_json({"type": "car", "gear": "D", "driving_min": 21, "attention": False, "warnings": "TPMS"})  # 목록이 아니면 버린다
+        chat_once(env, app, dev, "이제 괜찮아?")
+        app.send_json({"type": "car", "gear": "D", "driving_min": 22, "attention": False, "warnings": [1, " ", "x" * 50]})
+        chat_once(env, app, dev, "또?")
+        assert "켜진 경고등: 엔진 과열, 타이어 공기압." in env.brain.asked[0][1]
+        assert "켜진 경고등" not in env.brain.asked[1][1]
+        assert "켜진 경고등: " + "x" * 30 + "." in env.brain.asked[2][1]
+
+
 def test_a_line_said_first_is_remembered_in_the_situation(env):
     with connect_pair(env) as (app, dev):
         app.send_json({"type": "express", "device_id": env.a["id"], "expr": "worried", "say": "쉼터에서 쉬어 가요."})
@@ -397,38 +420,87 @@ def test_a_line_said_first_is_remembered_in_the_situation(env):
         assert '스노봇이 먼저 한 말: "쉼터에서 쉬어 가요."' in env.brain.asked[0][1]
 
 
-def test_driving_load_sets_reply_length_and_situation(env):
+def test_reply_length_follows_driving_or_parked(env):
+    """대답 길이는 주행/주차로 정한다. 2026-11-09 에 "바쁜 정도"(load)는 없앴다."""
     with connect_pair(env) as (app, dev):
-        for load in (0, 1, 2, 3):
-            app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False, "load": load})
-            chat_once(env, app, dev, "안녕")
-        app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False, "load": "3"})   # 이상한 값 → 주행 기본
+        chat_once(env, app, dev, "안녕")                                   # 차 상태를 모를 때
+        app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False})
         chat_once(env, app, dev, "안녕")
-        assert env.brain.limits == [3, 2, 1, 1, 2]
-        asked = [a[1] for a in env.brain.asked]
-        assert "한 문장으로" not in asked[0] and "한 문장으로" not in asked[1]
-        assert "운전에 주의가 필요한 때" in asked[2]
-        assert "운전이 바쁜 순간" in asked[3]
-        assert "운전이 바쁜 순간" not in asked[4]
+        app.send_json({"type": "car", "gear": "P", "driving_min": 10, "attention": False})
+        chat_once(env, app, dev, "안녕")
+        assert env.brain.limits == [MAX_SENTENCES, DRIVING_SENTENCES, PARKED_SENTENCES]
 
 
-async def slow_tts(text):
-    """첫 조각만 내고 오래 멈추는 목소리 — 말하는 도중을 흉내 낸다."""
-    yield b"\x01\x00" * 4
-    await asyncio.sleep(30)
-    yield b"\x02\x00"
+def test_an_old_app_sending_load_is_ignored(env):
+    with connect_pair(env) as (app, dev):
+        app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False, "load": 3})
+        chat_once(env, app, dev, "안녕")
+        assert env.brain.limits == [DRIVING_SENTENCES]
+        assert "바쁜" not in env.brain.asked[0][1]
 
 
-def test_busy_load_cuts_off_what_snowbot_was_saying(tmp_path):
+def test_the_car_summary_reaches_the_situation(env):
+    with connect_pair(env) as (app, dev):
+        app.send_json({"type": "car", "gear": "D", "driving_min": 10, "attention": False,
+                       "summary": "경고등 없음; 주행 가능 거리 38km; 목적지까지 52km · 40분"})
+        chat_once(env, app, dev, "얼마나 더 갈 수 있어?")
+        app.send_json({"type": "car", "gear": "D", "driving_min": 11, "attention": False, "summary": 5})
+        chat_once(env, app, dev, "또?")
+        assert "차 상태: 경고등 없음; 주행 가능 거리 38km; 목적지까지 52km · 40분." in env.brain.asked[0][1]
+        assert "차 상태:" not in env.brain.asked[1][1]        # 글자가 아니면 버린다
+
+
+SNOW_HELLO = {"bcp": "0.3", "type": "hello", "bot": {"id": "x", "model": "SnowBot", "name": "스노봇"},
+              "parts": [{"id": "head", "kind": "neck"}],
+              "expressions": {"emotions": ["neutral", "happy", "worried"], "gestures": ["nod", "look_left"]}}
+CUBE_HELLO = {"bcp": "0.3", "type": "hello", "bot": {"id": "y", "model": "LED Cube", "name": "큐브"},
+              "parts": [{"id": "ring", "kind": "light"}],
+              "expressions": {"emotions": ["neutral", "happy", "worried", "alert"], "gestures": []}}
+
+
+class LookLeftBrain(FakeBrain):
+    async def __call__(self, history, user, limit):
+        self.asked.append((list(history), user))
+        self.limits.append(limit)
+        yield Face("worried", "look_left")
+        yield "뒷자리에 가방 있어요."
+
+
+def test_two_bots_get_the_same_feeling_in_their_own_body(tmp_path):
     db = str(tmp_path / "relay.db")
-    a = dict(zip(("id", "key", "claim"), Store(db).add_device()))
-    with TestClient(create_app(db, tts=slow_tts, stt=FakeStt, brain=FakeBrain())) as client:
-        env = SimpleNamespace(client=client, a=a)
-        with connect_pair(env) as (app, dev):
-            app.send_json({"type": "express", "device_id": a["id"], "expr": "happy", "say": "오늘 이야기를 길게 할게요."})
-            assert dev.receive_json()["type"] == "express"
-            assert dev.receive_json()["type"] == "audio_start"
-            assert dev.receive()["bytes"]
-            app.send_json({"type": "car", "gear": "D", "driving_min": 3, "attention": False, "load": 3})
-            end = dev.receive_json()
-            assert end["type"] == "audio_end" and end["cancelled"] is True
+    store = Store(db)
+    a = dict(zip(("id", "key", "claim"), store.add_device()))
+    b = dict(zip(("id", "key", "claim"), store.add_device()))
+    brain = LookLeftBrain()
+    with TestClient(create_app(db, tts=fake_tts, stt=FakeStt, brain=brain)) as client:
+        token = pair(client, a).json()["token"]
+        assert pair(client, b, token=token).json()["token"] is None      # 같은 앱에 두 번째 봇
+        with client.websocket_connect("/ws") as app, client.websocket_connect("/ws") as snow, \
+                client.websocket_connect("/ws") as cube:
+            app.send_json({"type": "auth", "token": token})
+            app.receive_json()
+            for ws, dev, hello in ((snow, a, SNOW_HELLO), (cube, b, CUBE_HELLO)):
+                ws.send_json({"type": "auth", "device_id": dev["id"], "key": dev["key"]})
+                ws.receive_json()
+                assert app.receive_json()["type"] == "presence"
+                ws.send_json(hello)
+                assert app.receive_json()["type"] == "hello"
+            cube.send_json({"bcp": "0.3", "type": "observe", "sensor": "env", "data": {"humidity": 78}})
+            seen = app.receive_json()
+            assert seen["type"] == "observe" and seen["device_id"] == b["id"]   # 봇이 주는 정보는 앱(허브)으로
+            app.send_json({"type": "chat", "device_id": a["id"], "text": "뒤에 뭐 있어?", "tts": "app"})
+            assert snow.receive_json() == {"bcp": "0.3", "type": "express", "emotion": "worried", "intensity": 0.6,
+                                           "expr": "worried", "gesture": "look_left", "head": "turn_left"}
+            assert cube.receive_json() == {"bcp": "0.3", "type": "express", "emotion": "worried", "intensity": 0.6,
+                                           "expr": "worried"}                    # 큐브는 고개가 없다
+        situation = brain.asked[0][1]
+        assert "차 안 습도 78%." in situation                                   # 큐브가 느낀 습도
+        assert "연결된 봇: 스노봇(표정 neutral,happy,worried; 몸짓 nod,look_left)" in situation
+        assert "큐브(표정 neutral,happy,worried,alert; 몸짓 없음)" in situation
+
+
+def test_v01_hello_still_describes_the_body():
+    from snowbot_server.main import bot_body
+    hello = {"type": "hello", "model": "SnowBot SNW-01 (sim)",
+             "capabilities": [{"id": "express", "expr": ["neutral", "happy"], "head": ["nod", "turn_left"]}]}
+    assert bot_body(hello) == ("SnowBot SNW-01 (sim)", ["neutral", "happy"], ["nod", "look_left"])

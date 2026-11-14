@@ -122,7 +122,8 @@ class RelayClient(private val serverUrl: String, private val listener: Listener)
             server.trimEnd('/').replaceFirst("https://", "wss://").replaceFirst("http://", "ws://") + "/ws"
 
         /** QR 스티커의 기기 번호·등록 코드로 짝을 맺고 토큰을 받는다. 네트워크를 쓰므로 메인 스레드에서 부르지 않는다. */
-        fun pair(server: String, deviceId: String, claimCode: String, name: String): Result<String> = runCatching {
+        /** token 이 있으면 같은 앱에 봇을 더한다(서버가 새 토큰을 주지 않음 → 기존 토큰을 돌려준다). */
+        fun pair(server: String, deviceId: String, claimCode: String, name: String, token: String? = null): Result<String> = runCatching {
             val body = JSONObject()
                 .put("device_id", deviceId)
                 .put("claim_code", claimCode)
@@ -130,13 +131,15 @@ class RelayClient(private val serverUrl: String, private val listener: Listener)
                 .put("name", name)
                 .toString()
                 .toRequestBody("application/json".toMediaType())
-            val request = Request.Builder().url(server.trimEnd('/') + "/api/pair").post(body).build()
+            val request = Request.Builder().url(server.trimEnd('/') + "/api/pair").post(body)
+                .apply { if (token != null) header("Authorization", "Bearer $token") }.build()
             http.newCall(request).execute().use { response ->
                 val text = response.body?.string().orEmpty()
                 check(response.isSuccessful) {
                     if (response.code == 403) "기기 번호나 등록 코드가 맞지 않습니다" else "서버 오류 (${response.code})"
                 }
-                JSONObject(text).getString("token")
+                val json = JSONObject(text)
+                if (json.isNull("token")) token ?: error("서버가 토큰을 주지 않았습니다") else json.getString("token")
             }
         }
     }

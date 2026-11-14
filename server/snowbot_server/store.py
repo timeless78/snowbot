@@ -72,7 +72,7 @@ class Store:
         return app_id, token
 
     def devices_of(self, app_id: str) -> list[str]:
-        return [r[0] for r in self.db.execute("select device_id from pairs where app_id=?", (app_id,))]
+        return [r[0] for r in self.db.execute("select device_id from pairs where app_id=? order by rowid", (app_id,))]
 
     def apps_of(self, device_id: str) -> list[str]:
         return [r[0] for r in self.db.execute("select app_id from pairs where device_id=?", (device_id,))]

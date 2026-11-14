@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스노우봇 조립 안내</title>
+<style>
+:root{
+  --bg:#f4efe6;--surface:#fffdf8;--ink:#1d1a16;--muted:#6b645b;--line:#e3dacd;--soft:#f7f2e9;
+  --carrot:#c4561a;--carrot-soft:#fbe8da;--ok:#2c6e49;--ok-soft:#e4f1e8;--warn:#8a5a12;--warn-soft:#f8eed6;
+  --stop:#a3262f;--stop-soft:#f9e1e1;--blue:#3458c8;--blue-soft:#e3e9fb;
+  --red:#d33a32;--railblue:#2f64d6;
+  --font:"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#15120f;--surface:#1e1a16;--ink:#f2ebe1;--muted:#b2a79a;--line:#3b332b;--soft:#27211b;
+  --carrot:#f08a44;--carrot-soft:#3a2416;--ok:#8dcea8;--ok-soft:#1a2e23;--warn:#e5c27a;--warn-soft:#382d17;
+  --stop:#f08a8f;--stop-soft:#3a1d1f;--blue:#9db4ff;--blue-soft:#1d2540;color-scheme:dark}
+  .fig svg{background:#f7f3ec;border-radius:10px}
+}:root[data-theme="dark"]{--bg:#15120f;--surface:#1e1a16;--ink:#f2ebe1;--muted:#b2a79a;--line:#3b332b;--soft:#27211b;
+  --carrot:#f08a44;--carrot-soft:#3a2416;--ok:#8dcea8;--ok-soft:#1a2e23;--warn:#e5c27a;--warn-soft:#382d17;
+  --stop:#f08a8f;--stop-soft:#3a1d1f;--blue:#9db4ff;--blue-soft:#1d2540;color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16.5px;line-height:1.7;word-break:keep-all;overflow-wrap:break-word}
+.wrap{max-width:860px;margin:0 auto;padding:28px 18px 120px}
+h1{font-size:30px;line-height:1.3;margin:6px 0 10px}
+h2{font-size:23px;line-height:1.35;margin:0 0 6px}
+h3{font-size:18px;margin:18px 0 6px}
+p{margin:8px 0}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--carrot)}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+code,.k{font-family:var(--mono);font-size:.92em;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+a{color:var(--carrot)}
+/* 상단 */
+.lede{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 22px 18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{font-size:13.5px;border-radius:999px;padding:3px 11px;background:var(--soft);border:1px solid var(--line)}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent;font-weight:700}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:14px}
+.howto div{background:var(--soft);border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.55}
+.howto b{display:block;margin-bottom:2px}
+/* 진행 막대 */
+.bar-wrap{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 0 8px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:14px}
+.bar{flex:1;height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:var(--carrot);transition:width .3s}
+.nav{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:2px;scrollbar-width:none}
+.nav a{flex:none;font-size:13.5px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 11px}
+.nav a.cur{background:var(--carrot);color:#fff;border-color:transparent}
+/* 구역 */
+section{margin-top:44px;scroll-margin-top:90px}
+.part-h{border-left:5px solid var(--carrot);padding:2px 0 2px 14px;margin-bottom:14px}
+.part-h p{margin:4px 0 0;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:14px 0}
+.box.warn{background:var(--warn-soft);border-color:transparent}
+.box.stop{background:var(--stop-soft);border-color:transparent}
+.box.ok{background:var(--ok-soft);border-color:transparent}
+.box.blue{background:var(--blue-soft);border-color:transparent}
+.box h3{margin-top:0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+/* 단계 카드 */
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin:14px 0;overflow:hidden;scroll-margin-top:90px}
+.step.now{border-color:var(--carrot);box-shadow:0 0 0 2px var(--carrot-soft)}
+.step.done{opacity:.72}
+.step-h{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;user-select:none}
+.step-h input{width:24px;height:24px;margin-top:3px;flex:none;accent-color:var(--ok)}
+.num{flex:none;min-width:30px;height:30px;border-radius:99px;background:var(--carrot);color:#fff;font-weight:800;display:grid;place-items:center;font-size:15px;margin-top:0}
+.step.done .num{background:var(--ok)}
+.step-t{font-weight:800;font-size:18px;line-height:1.45}
+.step-t small{display:block;font-weight:500;font-size:14px;color:var(--muted)}
+.opt{font-size:12px;font-weight:700;background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.step-b{padding:0 18px 16px 18px}
+.why{background:var(--soft);border-radius:12px;padding:10px 14px;margin:10px 0;font-size:15px}
+.why::before{content:"왜 하나요? ";font-weight:800;color:var(--carrot)}
+.okline{border-top:1px dashed var(--line);margin-top:12px;padding-top:10px;font-size:15px}
+.okline::before{content:"✓ 이렇게 되면 끝 ";font-weight:800;color:var(--ok)}
+.stuck{font-size:15px;margin-top:8px}
+.stuck summary{cursor:pointer;font-weight:700;color:var(--warn)}
+.stuck[open] summary{margin-bottom:4px}
+.never{color:var(--stop);font-weight:700}
+/* 그림 */
+.fig{margin:14px 0}
+.fig img,.fig svg{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#fff}
+.fig figcaption{font-size:14px;color:var(--muted);margin-top:6px;line-height:1.55}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.two{grid-template-columns:1fr}}
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 14px;font-size:14.5px;margin:8px 0}
+.legend span b{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:99px;color:#fff;font-size:13px;margin-right:6px}
+.lg-o b{background:#c95a17}.lg-g b{background:#2c6e49}.lg-b b{background:#345ac8}
+/* 표 */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{border-bottom:1px solid var(--line);padding:8px 8px;text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:700}
+td.c{width:34px}
+td.c input{width:20px;height:20px;accent-color:var(--ok)}
+tr.got td{color:var(--muted)}
+.tag{display:inline-block;font-size:12.5px;font-weight:700;border-radius:6px;padding:1px 7px;background:var(--warn-soft);color:var(--warn)}
+.tag.g{background:var(--ok-soft);color:var(--ok)}
+/* 입력 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0}
+label.f{display:flex;flex-direction:column;font-size:14px;color:var(--muted);gap:4px}
+label.f input,label.f select,label.f textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+label.f textarea{min-height:80px}
+.ref{font-size:13px;color:var(--muted)}
+button.btn{font:inherit;font-size:15px;font-weight:700;border:0;border-radius:10px;padding:9px 14px;background:var(--carrot);color:#fff;cursor:pointer}
+button.btn.ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.alert{display:none;margin-top:8px}
+.alert.show{display:block}
+pre{font-family:var(--mono);font-size:13px;line-height:1.5;background:#1c1915;color:#f3ece3;border-radius:12px;padding:14px;overflow-x:auto;margin:10px 0}
+/* 명령 표 */
+.cmds{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0}
+.cmds div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:14.5px}
+.cmds code{font-size:15px;font-weight:700}
+/* 용어 */
+.t{-webkit-appearance:none;appearance:none;border:0;border-radius:0;border-bottom:2px dotted var(--carrot);cursor:help;font-weight:inherit;background:none;padding:0;color:inherit;font:inherit}
+.t:focus{outline:2px solid var(--carrot);outline-offset:2px;border-radius:3px}
+#pop{position:absolute;z-index:50;max-width:320px;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 13px;font-size:14.5px;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,.25);display:none}
+#pop b{display:block;margin-bottom:2px;color:var(--carrot-soft)}
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.gloss div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.55}
+.gloss b{display:block}
+.rules{counter-reset:r;list-style:none;padding:0}
+.rules li{counter-increment:r;position:relative;padding:10px 12px 10px 48px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:8px 0}
+.rules li::before{content:counter(r);position:absolute;left:12px;top:10px;width:26px;height:26px;border-radius:99px;background:var(--stop);color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+.rules li span{display:block;font-size:14.5px;color:var(--muted)}
+.road{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.road a{display:block;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px;line-height:1.45}
+.road a b{display:block;font-size:15.5px}
+.road a.later{opacity:.6}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.tools label{display:flex;gap:8px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14.5px;line-height:1.45;cursor:pointer}
+.tools input{margin-top:3px;accent-color:var(--ok)}
+.tools small{display:block;color:var(--muted)}
+footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="lede">
+  <div class="eyebrow">SNW-01 · 2026-11-07 판 · 부품 모두 도착</div>
+  <h1>스노우봇 조립 안내</h1>
+  <p>이 페이지는 <b>오늘부터 할 일</b>을 순서대로 적은 작업 안내서입니다. 오늘 눈사람을 다 닫아 완성하지는 않습니다. 몸통과 머리 뒤 덮개는 아직 출력하지 않았기 때문입니다. 오늘 목표는 세 가지입니다.</p>
+  <ol>
+    <li>받은 부품이 맞는지 확인하고, 실제 크기를 잰다.</li>
+    <li>1차 출력에 들어 있는 <button class="t" data-t="coupon">공차 판</button>으로 "구멍을 얼마나 크게 뚫어야 꼭 맞는지" 숫자를 고른다. 이 숫자로 2차 출력 파일을 고칩니다.</li>
+    <li>몸체에 넣기 전에, 책상 위에서 서보 4개가 명령대로 도는지 본다.</li>
+  </ol>
+  <div class="chips">
+    <span class="chip ok">알리 주문 18줄 모두 도착</span>
+    <span class="chip">XIAO 카메라: OV5640</span>
+    <span class="chip">1차 출력 받음 (10/29)</span>
+    <span class="chip">2차 출력 전</span>
+  </div>
+  <div class="howto">
+    <div><b>밑줄 친 단어를 누르세요</b>점선 밑줄이 있는 단어를 누르면 뜻이 작은 창으로 나옵니다. 페이지 맨 아래에 단어 모음도 있습니다.</div>
+    <div><b>체크하면 저장됩니다</b>각 단계 제목 옆 네모를 누르면 끝난 것으로 표시됩니다. 다음에 할 단계는 주황 테두리로 보입니다.</div>
+    <div><b>잰 값은 복사해서 보내 주세요</b>칸에 적은 숫자는 맨 아래 <b>기록 복사</b> 버튼으로 한 번에 복사됩니다. 그대로 채팅에 붙여 넣으면 제가 설계 숫자를 고칩니다.</div>
+  </div>
+</header>
+
+<div class="bar-wrap">
+  <div class="bar-row"><span>진행</span><div class="bar"><span id="bar"></span></div><span id="count">0 / 0</span></div>
+  <nav class="nav" id="nav">
+    <a href="#p0">준비</a><a href="#p1">1 부품 확인</a><a href="#p2">2 치수</a><a href="#remeasure">다시 재기</a><a href="#p3">3 공차 판</a><a href="#p4">4 서보 시험</a><a href="#p5">5 끼워 보기</a><a href="#p6">나중</a><a href="#rec">기록</a><a href="#words">단어</a>
+  </nav>
+</div>
+
+<!-- ───────── 0 준비 ───────── -->
+<section id="p0">
+  <div class="part-h"><div class="eyebrow">0 · 시작 전에</div><h2>전체 흐름과 준비물</h2><p>한 번에 다 하지 않아도 됩니다. 각 구역이 끝나는 곳에서 쉬어도 됩니다.</p></div>
+
+  <div class="road">
+    <a href="#p1"><b>1 부품 확인</b>봉지 열고 이름 붙이기</a>
+    <a href="#p2"><b>2 치수 재기</b>서보·베어링 크기</a>
+    <a href="#p3"><b>3 공차 판</b>꼭 맞는 구멍 고르기</a>
+    <a href="#p4"><b>4 서보 시험</b>납땜 → 코드 → 돌리기</a>
+    <a href="#p5"><b>5 끼워 보기</b>눈·목 가조립</a>
+    <a href="#p6" class="later"><b>나중</b>2차 출력 뒤 완성</a>
+  </div>
+
+  <h3>준비물</h3>
+  <p class="muted small">있는 것을 체크해 두세요. 없는 것이 있으면 그 단계만 건너뛰면 됩니다.</p>
+  <div class="tools">
+    <label><input type="checkbox" data-save id="tool-iron"><span>납땜인두 + 실납<small>4번 구역(핀 납땜)과 3번 구역(인서트)에 필요</small></span></label>
+    <label><input type="checkbox" data-save id="tool-nipper"><span>니퍼<small>출력물 지지대 떼기, 선 자르기</small></span></label>
+    <label><input type="checkbox" data-save id="tool-cal"><span>캘리퍼스<small>없으면 자로 재고 0.5mm 단위로 적습니다</small></span></label>
+    <label><input type="checkbox" data-save id="tool-tape"><span>마스킹테이프 + 펜<small>봉지·서보에 이름 붙이기</small></span></label>
+    <label><input type="checkbox" data-save id="tool-cable"><span>USB-C 데이터 케이블<small>컴퓨터 ↔ XIAO. 충전 전용 선은 안 됩니다</small></span></label>
+    <label><input type="checkbox" data-save id="tool-charger"><span>USB-C 충전기 (5V)<small>서보에 전기를 주는 용도. 휴대폰 충전기면 됩니다</small></span></label>
+    <label><input type="checkbox" data-save id="tool-meter"><span>멀티미터 (선택)<small>전압 확인용. 없으면 해당 줄만 건너뜁니다</small></span></label>
+    <label><input type="checkbox" data-save id="tool-driver"><span>작은 십자 드라이버<small>서보 혼 나사, M2 나사</small></span></label>
+  </div>
+
+  <h3>꼭 지킬 것 다섯 가지</h3>
+  <ol class="rules">
+    <li>서보의 빨강 선은 <b>브레드보드 빨간 레일</b>에만 꽂습니다. XIAO 의 5V 핀에 꽂지 않습니다.<span>서보는 움직이는 순간 전기를 많이 씁니다. XIAO 를 거쳐 컴퓨터 USB 에서 그 전기를 끌어오면 보드가 꺼졌다 켜지기를 반복하고, 컴퓨터 USB 포트에도 무리가 갑니다.</span></li>
+    <li>4번 구역의 시험에서 <b>XIAO 의 5V 핀은 비워 둡니다.</b> 컴퓨터는 XIAO 에, 충전기는 서보에 전기를 줍니다. 두 전기는 <button class="t" data-t="gnd">GND</button> 한 줄로만 잇습니다.<span>이렇게 나누면 컴퓨터와 충전기를 동시에 꽂아도 두 5V 가 만나지 않습니다. 그래서 시험 내내 컴퓨터로 명령을 보낼 수 있습니다. 예전 안내서의 "꽂았다 뽑았다"를 없앤 방식입니다.</span></li>
+    <li><button class="t" data-t="capacitor">콘덴서</button>와 <button class="t" data-t="diode">다이오드</button>는 방향이 있습니다. 그림과 같은 방향으로 꽂습니다.<span>콘덴서를 거꾸로 꽂으면 부풀거나 터질 수 있습니다. 다이오드를 거꾸로 꽂으면 전기가 안 흐릅니다.</span></li>
+    <li>선을 꽂거나 뺄 때는 <b>충전기를 먼저 뽑습니다.</b><span>전기가 흐르는 중에 선이 잘못된 구멍에 잠깐 닿으면 부품이 상할 수 있습니다.</span></li>
+    <li>인두는 쓰지 않을 때 받침에 두고, 끝나면 바로 끕니다. 인서트를 박을 때 인두 끝은 약 200°C 입니다.<span>3D 출력물(PLA)은 60°C 쯤부터 물러집니다. 인두가 출력물에 오래 닿으면 녹아 구멍이 망가집니다.</span></li>
+  </ol>
+</section>
+
+<!-- ───────── 1 부품 확인 ───────── -->
+<section id="p1">
+  <div class="part-h"><div class="eyebrow">1 · 부품 확인</div><h2>봉지를 열고 이름부터 붙입니다</h2><p>공구는 아직 필요 없습니다. 마스킹테이프와 펜만 있으면 됩니다.</p></div>
+
+  <figure class="fig">
+    <img src="bags-map.jpg" alt="11월 4일 받은 알리 부품 봉지 사진. 봉지마다 1번부터 15번까지 번호가 붙어 있다.">
+    <figcaption>11/4 에 찍은 사진에 번호를 붙였습니다. 아래 표의 번호와 같습니다. 16번 XIAO 는 11/7 에 따로 왔습니다.</figcaption>
+  </figure>
+
+  <div class="tbl">
+  <table>
+    <thead><tr><th></th><th>번호 · 부품</th><th>어디에 쓰나</th><th>확인할 것</th></tr></thead>
+    <tbody>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b1"></td><td><b>1 MG90S 서보 4개</b><br><span class="muted small">보라 라벨, 쇠 톱니</span></td><td>고개 좌우 1, 끄덕임 1, 여분 2</td><td><span class="tag g">사진으로 확인</span></td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b2"></td><td><b>2 작은 파란 서보 3개</b><br><span class="muted small">흰 혼이 같이 있음</span></td><td>눈꺼풀 1, 눈썹 1, 여분 1</td><td><span class="tag">라벨 읽기</span> 4번 단계</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b3"></td><td><b>3 브레드보드 + 점퍼선</b></td><td>오늘 시험 배선</td><td><span class="tag g">사진으로 확인</span></td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b4"></td><td><b>4 핀 헤더 (긴 검은 줄)</b></td><td>여분. XIAO 는 상자에 든 7핀 헤더를 씁니다</td><td><span class="tag g">사진으로 확인</span></td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b5"></td><td><b>5 실리콘 전선 빨강·노랑·검정</b></td><td>나중에 목을 지나는 선</td><td>오늘은 자르지 않음</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b6"></td><td><b>6 수축튜브 164개</b></td><td>납땜한 자리를 감싸는 고무관</td><td>오늘은 그대로 둠</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b7"></td><td><b>7 파란 만능기판 10장</b></td><td>시험이 끝난 뒤 최종 배선</td><td>오늘은 그대로 둠</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b8"></td><td><b>8 다이오드 50개</b></td><td>컴퓨터 없이 켤 때 XIAO 보호</td><td><span class="tag">골라야 함</span> 3번 단계</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b9"></td><td><b>9 금색 M2 인서트 50개</b></td><td>출력물에 쇠 나사산 만들기</td><td><span class="tag g">라벨 M2×3×3.2</span></td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b10"></td><td><b>10 M2 나사 칸 상자</b></td><td>인서트에 조이는 나사</td><td><span class="tag g">사진으로 확인</span></td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b11"></td><td><b>11 빨간 USB-C 기판 5개</b></td><td>충전기 전기를 브레드보드로</td><td><span class="tag">글자 확인</span> 5번 단계</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b12"></td><td><b>12 베어링 (은색 링)</b></td><td>목. 머리 무게를 받음</td><td><span class="tag">치수</span> 6번 단계</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b13"></td><td><b>13 보라 기판 (앰프)</b></td><td>스피커 소리 키우기</td><td>오늘은 사진만</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b14"></td><td><b>14 스피커 (뽁뽁이 안)</b></td><td>몸통 앞 목소리</td><td>오늘은 그대로 둠</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b15"></td><td><b>15 은색 봉투</b></td><td>1000µF 콘덴서로 추정</td><td><span class="tag">열어 보기</span> 5번 단계</td></tr>
+      <tr><td class="c"><input type="checkbox" data-save data-bag id="b16"></td><td><b>16 XIAO ESP32S3 Sense</b><br><span class="muted small">둥근 투명 통</span></td><td>두뇌 보드 + 카메라 + 마이크</td><td><span class="tag">2번 단계</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <article class="step" data-step id="s1">
+    <label class="step-h"><input type="checkbox" data-save id="c1"><span class="num">1</span><span class="step-t">봉지마다 번호와 이름을 적습니다<small>위 사진 번호 그대로</small></span></label>
+    <div class="step-b">
+      <ol>
+        <li>마스킹테이프에 위 표의 번호와 이름을 적어 봉지에 붙입니다.</li>
+        <li>맞는 봉지는 표의 네모를 체크합니다.</li>
+        <li>5·6·7번(전선·수축튜브·만능기판)은 옆으로 치웁니다. 오늘은 쓰지 않습니다.</li>
+      </ol>
+      <div class="why">나중에 "작은 서보 하나 주세요" 같은 순간에 바로 찾기 위해서입니다. 비슷한 투명 봉지가 많아 섞이기 쉽습니다.</div>
+      <p class="okline">표의 1~15번이 체크되어 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s2">
+    <label class="step-h"><input type="checkbox" data-save id="c2"><span class="num">2</span><span class="step-t">XIAO 통 안에 든 것 네 가지를 확인합니다<small>11/7 에 온 마지막 부품</small></span></label>
+    <div class="step-b">
+      <div class="two">
+        <figure class="fig"><img src="xiao-map.jpg" alt="XIAO 가 스펀지에 꽂힌 사진. 1 카메라 렌즈, 2 카메라 리본, 3 카메라 소켓, 4 안테나 선."><figcaption>윗면. 스펀지 안에 보드가 끼워져 있습니다.</figcaption></figure>
+        <figure class="fig"><img src="xiao-back-map.jpg" alt="스펀지 뒷면. 7핀 헤더 두 줄과 파란 사각 조각 두 개."><figcaption>뒷면. 7핀 헤더 두 줄과 파란 조각 두 개가 꽂혀 있습니다.</figcaption></figure>
+      </div>
+      <div class="legend">
+        <span class="lg-b"><b>1</b>카메라 렌즈. 빨간 것은 보호 스티커</span>
+        <span class="lg-b"><b>2</b>카메라 <button class="t" data-t="fpc">리본</button>. "OV5640" 이 인쇄돼 있음</span>
+        <span class="lg-b"><b>3</b>리본이 꽂히는 카메라 소켓 (Sense 확장보드)</span>
+        <span class="lg-b"><b>4</b>Wi-Fi <button class="t" data-t="antenna">안테나</button>. 끝이 납작한 판</span>
+      </div>
+      <ol>
+        <li><b>카메라:</b> 주문서에는 OV3660 이라고 적혀 있었는데 실제로는 <b>OV5640</b> 이 왔습니다. 쓰는 데는 문제없습니다. 다만 OV5640 은 오래 켜 두면 뜨거워집니다. 그래서 머리에 넣을 때 열이 빠질 구멍을 둡니다(나중 일).</li>
+        <li><b>헤더 두 줄:</b> 보드에 아직 납땜되지 않은 7핀 <button class="t" data-t="header">핀 헤더</button>입니다. 14번 단계에서 납땜합니다. 잃어버리지 않게 스펀지에 꽂아 둡니다.</li>
+        <li><b>파란 조각 두 개:</b> 칩의 열을 빼는 <button class="t" data-t="heatsink">방열판</button>으로 보입니다(Seeed 는 카메라가 든 제품에 방열판을 넣어 보낸다고 적었습니다). 손톱으로 두드려 금속 소리가 나고, 한쪽 면이 끈끈하면 방열판이 맞습니다. 서보 시험에는 필요 없으니 지금은 붙이지 않고 보관합니다.</li>
+        <li><b>안테나:</b> Wi-Fi 를 쓸 때 꽂습니다. 오늘 서보 시험은 Wi-Fi 를 쓰지 않으니 통에 그대로 둡니다. 꽂는 법은 아래 "더 보기"에 있습니다.</li>
+      </ol>
+      <label class="f" style="max-width:320px">파란 조각은
+        <select data-save id="m-blue" data-label="파란 조각">
+          <option value="">아직</option><option>방열판이 맞다 (금속, 한쪽 끈끈)</option><option>다른 것 같다</option>
+        </select>
+      </label>
+      <details class="stuck"><summary>더 보기 · 안테나를 꽂는 법 (나중에)</summary>
+        <p>XIAO 앞면 왼쪽 아래에 지름 2mm 쯤 되는 작은 동그란 금속 단자(<button class="t" data-t="ufl">U.FL</button>)가 있습니다. 안테나 선 끝의 동그란 머리를 그 위에 올리고, <b>한쪽 가장자리를 먼저 걸친 다음 반대쪽을 살짝 눌러</b> "딸깍" 끼웁니다. Seeed 안내에 따르면 한가운데를 세게 누르면 잘 안 들어가고 손가락만 아픕니다. 뺄 때도 선을 잡아당기지 말고 한쪽을 들어 올리듯 뺍니다.</p>
+      </details>
+      <p class="okline">헤더 두 줄, 파란 조각 두 개, 안테나가 통 안에 있고, 보드는 스펀지에 그대로 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s3">
+    <label class="step-h"><input type="checkbox" data-save id="c3"><span class="num">3</span><span class="step-t">다이오드 봉지에서 1N5817 만 골라 둡니다<small>8번 봉지</small></span></label>
+    <div class="step-b">
+      <p>8번 봉지는 이름이 "1N5817" 이지만, 판매 페이지 제목에 여러 종류(1N4001, 1N4007 등)가 함께 적혀 있었습니다. 혹시 섞여 왔을 수 있으니 몸통 글자를 읽어 골라 둡니다.</p>
+      <figure class="fig">
+        <svg viewBox="0 0 760 230" role="img" aria-label="다이오드 그림. 검은 몸통 한쪽 끝에 은색 띠가 있고, 몸통에 5817 글자가 있다. 띠 쪽이 캐소드, 반대쪽이 애노드.">
+          <rect width="760" height="230" fill="#fff"/>
+          <line x1="40" y1="110" x2="250" y2="110" stroke="#9a9a9a" stroke-width="5"/>
+          <line x1="510" y1="110" x2="720" y2="110" stroke="#9a9a9a" stroke-width="5"/>
+          <rect x="250" y="78" width="260" height="64" rx="14" fill="#1f1f1f"/>
+          <rect x="452" y="78" width="30" height="64" fill="#c9c9c9"/>
+          <text x="360" y="118" fill="#e8e8e8" font-size="24" font-family="Menlo,monospace" text-anchor="middle">1N5817</text>
+          <text x="140" y="70" font-size="20" text-anchor="middle" fill="#333" font-weight="700">띠 없는 쪽</text>
+          <text x="140" y="160" font-size="17" text-anchor="middle" fill="#666">전기가 들어오는 쪽</text>
+          <text x="615" y="70" font-size="20" text-anchor="middle" fill="#333" font-weight="700">띠 쪽</text>
+          <text x="615" y="160" font-size="17" text-anchor="middle" fill="#666">전기가 나가는 쪽</text>
+          <path d="M330 195 L430 195" stroke="#c4561a" stroke-width="4" marker-end="url(#ar)"/>
+          <text x="380" y="222" font-size="17" text-anchor="middle" fill="#c4561a" font-weight="700">전기는 이 방향으로만 흐릅니다</text>
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#c4561a"/></marker></defs>
+        </svg>
+        <figcaption>다이오드는 검은 원통에 은색(또는 회색) 띠가 하나 있습니다. 글자는 아주 작으니 휴대폰 카메라로 확대해서 읽으면 편합니다.</figcaption>
+      </figure>
+      <ol>
+        <li>몸통에 <b>5817</b> 또는 <b>5819</b> 가 보이는 것만 작은 통(또는 작은 봉지)에 담고 "전원용"이라고 적습니다. 2~3개면 충분합니다.</li>
+        <li>4001, 4007, 4937, 5399 처럼 다른 숫자가 보이면 따로 담고 "전원 아님"이라고 적습니다.</li>
+        <li>글자가 안 읽히는 알은 쓰지 않습니다.</li>
+      </ol>
+      <div class="why">다이오드는 전기를 한 방향으로만 보내는 부품입니다. 20번 단계(컴퓨터 없이 켜기)에서 충전기 전기를 XIAO 에 넣을 때, XIAO 쪽 전기가 거꾸로 서보 쪽으로 새지 않게 막습니다. 1N5817 은 지나갈 때 잃는 전압이 작아서(약 0.3V) 이 용도에 맞습니다.</div>
+      <label class="f" style="max-width:260px">전원용으로 고른 개수<input type="number" min="0" data-save id="m-diode" data-label="1N5817 고른 개수" inputmode="numeric"></label>
+      <p class="okline">"전원용" 통에 1N5817(또는 1N5819)이 2개 이상 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s4">
+    <label class="step-h"><input type="checkbox" data-save id="c4"><span class="num">4</span><span class="step-t">서보를 세고 작은 서보의 라벨을 읽습니다<small>1번·2번 봉지</small></span></label>
+    <div class="step-b">
+      <p>작은 파란 서보는 SG51R 로 주문했습니다. 생김새가 비슷한 SG90 이 대신 오는 일이 흔합니다. SG90 은 조금 더 커서 눈 자리에 들어가지 않습니다. 라벨 글자를 그대로 적어 주세요.</p>
+      <div class="grid">
+        <label class="f">MG90S 개수<input type="number" min="0" max="9" data-save id="m-mg-n" data-label="MG90S 개수" inputmode="numeric"></label>
+        <label class="f">작은 서보 개수<input type="number" min="0" max="9" data-save id="m-sg-n" data-label="작은 서보 개수" inputmode="numeric"></label>
+        <label class="f">작은 서보 라벨
+          <select data-save id="m-sg-name" data-label="작은 서보 라벨"><option value="">아직</option><option>SG51R</option><option>SG90</option><option>다른 글자</option><option>글자 없음</option></select>
+        </label>
+      </div>
+      <div class="box warn alert" id="sg90-alert">SG90 이면 눈 기구 자리에는 들어가지 않을 가능성이 큽니다. 서보 시험(4번 구역)은 그대로 하고, 눈 자리는 6번 단계에서 잰 크기로 설계를 고칩니다. 다른 서보를 사기 전에 저에게 크기를 먼저 알려 주세요.</div>
+      <p class="okline">개수가 4 와 3 이고, 라벨 칸이 채워져 있습니다. 개수가 다르면 그대로 적고 넘어갑니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s5">
+    <label class="step-h"><input type="checkbox" data-save id="c5"><span class="num">5</span><span class="step-t">빨간 USB-C 기판과 은색 봉투를 확인합니다<small>11번·15번</small></span></label>
+    <div class="step-b">
+      <p><b>11번 빨간 기판:</b> 흰 카드에서 하나만 떼어 냅니다. 기판 위의 하얀 글자(<button class="t" data-t="silk">실크</button>)를 봅니다. <code>VBUS</code> 또는 <code>5V</code>, 그리고 <code>GND</code> 가 있으면 전원 보드가 맞습니다. 핀은 이미 납땜되어 있어 브레드보드에 바로 꽂힙니다. <code>CC1</code>·<code>CC2</code>·<code>D+</code>·<code>D−</code> 같은 다른 글자는 오늘 쓰지 않습니다.</p>
+      <p><b>15번 은색 봉투:</b> 열어서 원통 모양 부품에 <b>1000µF</b> 가 적혀 있으면 <button class="t" data-t="capacitor">콘덴서</button>입니다. 하나만 꺼내고 나머지는 봉투에 둡니다.</p>
+      <div class="grid">
+        <label class="f">빨간 기판 글자
+          <select data-save id="m-usb" data-label="USB-C 기판 글자"><option value="">아직</option><option>VBUS 와 GND 가 있다</option><option>5V 와 GND 가 있다</option><option>잘 모르겠다</option></select>
+        </label>
+        <label class="f">은색 봉투 안
+          <select data-save id="m-cap" data-label="은색 봉투"><option value="">아직</option><option>1000µF 콘덴서</option><option>다른 것</option></select>
+        </label>
+      </div>
+      <details class="stuck"><summary>글자가 VBUS 인데 괜찮나요?</summary><p>네. VBUS 는 USB 에서 들어오는 5V 선의 이름입니다. 5V 와 같은 뜻으로 보면 됩니다.</p></details>
+      <p class="okline">시험용 빨간 기판 1개와 콘덴서 1개가 꺼내져 있습니다.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ───────── 2 치수 ───────── -->
+<section id="p2">
+  <div class="part-h"><div class="eyebrow">2 · 치수 재기</div><h2>판매 페이지 숫자보다 직접 잰 값이 정확합니다</h2><p>지금 설계는 판매 페이지에 적힌 크기로 그렸습니다. 같은 이름의 서보도 공장마다 0.5mm 쯤 다를 수 있습니다. 직접 잰 값으로 2차 출력 파일을 고칩니다.</p></div>
+
+  <article class="step" data-step id="s6">
+    <label class="step-h"><input type="checkbox" data-save id="c6"><span class="num">6</span><span class="step-t">서보·베어링 크기를 재서 칸에 적습니다<small>단위는 mm</small></span></label>
+    <div class="step-b">
+      <figure class="fig">
+        <svg viewBox="0 0 860 330" role="img" aria-label="서보 재는 법. 옆에서 본 서보 그림에 길이, 폭, 높이, 날개 길이, 날개 높이, 끝에서 축까지 치수선이 있다.">
+          <rect width="860" height="330" fill="#fff"/>
+          <defs><marker id="a2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#c4561a"/></marker>
+          <marker id="a2g" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2c6e49"/></marker>
+          <marker id="a2p" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7a4fb0"/></marker></defs>
+          <g font-family="sans-serif">
+          <rect x="230" y="90" width="230" height="170" rx="6" fill="#2b4fa8"/>
+          <rect x="180" y="150" width="330" height="22" rx="4" fill="#3b63c4"/>
+          <circle cx="200" cy="161" r="6" fill="#fff"/><circle cx="490" cy="161" r="6" fill="#fff"/>
+          <rect x="390" y="60" width="48" height="30" fill="#2b4fa8"/>
+          <rect x="404" y="38" width="20" height="22" fill="#d9d9d9"/>
+          <text x="345" y="225" fill="#fff" font-size="20" text-anchor="middle" font-weight="700">서보 몸체</text>
+          <line x1="230" y1="290" x2="460" y2="290" stroke="#c4561a" stroke-width="3" marker-start="url(#a2)" marker-end="url(#a2)"/>
+          <line x1="230" y1="262" x2="230" y2="300" stroke="#c4561a" stroke-dasharray="4 3"/><line x1="460" y1="262" x2="460" y2="300" stroke="#c4561a" stroke-dasharray="4 3"/>
+          <text x="345" y="320" font-size="18" text-anchor="middle" fill="#c4561a" font-weight="700">① 길이 (날개 빼고)</text>
+          <line x1="180" y1="132" x2="510" y2="132" stroke="#2c6e49" stroke-width="3" marker-start="url(#a2g)" marker-end="url(#a2g)"/>
+          <line x1="180" y1="128" x2="180" y2="150" stroke="#2c6e49" stroke-dasharray="4 3"/><line x1="510" y1="128" x2="510" y2="150" stroke="#2c6e49" stroke-dasharray="4 3"/>
+          <text x="170" y="120" font-size="17" text-anchor="end" fill="#2c6e49" font-weight="700">④ 날개 끝~끝</text>
+          <line x1="560" y1="90" x2="560" y2="260" stroke="#c4561a" stroke-width="3" marker-start="url(#a2)" marker-end="url(#a2)"/>
+          <line x1="460" y1="90" x2="570" y2="90" stroke="#c4561a" stroke-dasharray="4 3"/><line x1="460" y1="260" x2="570" y2="260" stroke="#c4561a" stroke-dasharray="4 3"/>
+          <text x="574" y="180" font-size="18" fill="#c4561a" font-weight="700">③ 높이</text>
+          <text x="574" y="202" font-size="15" fill="#666">바닥 ~ 몸체 윗면</text>
+          <text x="574" y="222" font-size="15" fill="#666">(톱니 덮개·축 제외)</text>
+          <line x1="140" y1="172" x2="140" y2="260" stroke="#7a4fb0" stroke-width="3" marker-start="url(#a2p)" marker-end="url(#a2p)"/>
+          <line x1="135" y1="172" x2="180" y2="172" stroke="#7a4fb0" stroke-dasharray="4 3"/><line x1="135" y1="260" x2="230" y2="260" stroke="#7a4fb0" stroke-dasharray="4 3"/>
+          <text x="128" y="212" font-size="16" fill="#7a4fb0" font-weight="700" text-anchor="end">⑤ 바닥 ~</text>
+          <text x="128" y="232" font-size="16" fill="#7a4fb0" font-weight="700" text-anchor="end">날개 아래면</text>
+          <line x1="414" y1="20" x2="460" y2="20" stroke="#c4561a" stroke-width="3" marker-start="url(#a2)" marker-end="url(#a2)"/>
+          <line x1="414" y1="14" x2="414" y2="38" stroke="#c4561a" stroke-dasharray="4 3"/><line x1="460" y1="14" x2="460" y2="90" stroke="#c4561a" stroke-dasharray="4 3"/>
+          <text x="472" y="26" font-size="17" fill="#c4561a" font-weight="700">⑥ 축 가운데 ~ 가까운 끝</text>
+          <rect x="720" y="56" width="100" height="54" rx="5" fill="#2b4fa8"/>
+          <line x1="838" y1="56" x2="838" y2="110" stroke="#c4561a" stroke-width="3" marker-start="url(#a2)" marker-end="url(#a2)"/>
+          <text x="770" y="134" font-size="15" text-anchor="middle" fill="#333">위에서 본 모습</text>
+          <text x="770" y="158" font-size="18" text-anchor="middle" fill="#c4561a" font-weight="700">② 폭</text>
+          </g>
+        </svg>
+        <figcaption>혼(흰 플라스틱 팔)은 빼고 잽니다. 캘리퍼스가 없으면 자를 대고 0.5mm 단위로 적어도 됩니다. 3번 구역의 공차 판으로 맞는지 한 번 더 확인하므로 너무 걱정하지 않아도 됩니다.</figcaption>
+      </figure>
+
+      <div class="box">
+        <h3>캘리퍼스로 잴 때</h3>
+        <ul>
+          <li><b>먼저 0 맞추기:</b> 턱을 끝까지 닫고 ZERO 버튼을 눌러 0.00 이 나오게 합니다.</li>
+          <li><b>턱 끝 말고 안쪽 평평한 면으로:</b> 뾰족한 끝에 걸치면 둥근 모서리에 닿아 작게 나옵니다. 서보를 턱 안쪽 깊이 넣고, 날개·톱니 덮개를 피해 <b>스티커가 붙은 몸통</b>에 대고 잽니다.</li>
+          <li><b>살짝만 닫기:</b> 플라스틱이 눌리면 작게 나옵니다. 턱이 닿는 순간 멈춥니다.</li>
+          <li><b>두세 번 재서 가운데 값:</b> 0.1~0.2mm 씩 다르게 나오는 건 정상입니다.</li>
+          <li><b>⑥ 은 한 번에 안 잽니다.</b> 축 가운데에는 턱을 댈 수 없고, 축은 몸통 윗면보다 높이 있는데 몸통 끝면은 그보다 낮아서 두 턱을 한 번에 댈 수 없습니다. 끝면에 카드를 세워 대고 재는 방법을 바로 아래 <a href="#remeasure">"다시 재 주실 것" 1번</a>에 그림으로 적었습니다.</li>
+        </ul>
+      </div>
+
+      <div class="box warn" id="remeasure">
+        <h3>11/7 기록을 보고 다시 재 주실 것 5가지</h3>
+        <p>보내 주신 기록에서 확실한 값은 2차 설계에 이미 넣었습니다: 나사 구멍 2.2, 베어링 자리 19.2, MG90S 폭 11.8·높이 22.4, SG51R 폭 12.3, 렌즈 구멍 7.2, 스피커 두께 5.5. 남은 것은 아래 다섯 개입니다. 이 값으로 <b>서보 자리 위치와 목 높이</b>를 정하고 2차 출력 파일을 확정합니다.</p>
+        <figure class="fig">
+          <svg viewBox="0 0 860 390" role="img" aria-label="왼쪽: 서보를 옆에서 본 그림. 캘리퍼스 한쪽 턱은 서보 바닥, 다른 쪽 턱은 축 끝에 닿아 있고, 그 사이가 ⑦ 전체 높이다. 오른쪽: 서보 끝면에 카드를 세워 대고, 캘리퍼스 한 턱은 카드 바깥면, 다른 턱은 축의 먼 쪽 옆면에 닿아 있다. 그 거리가 ⓑ, 카드 두께가 ⓒ, 축 가운데에서 몸통 끝까지가 ⑥ 이다.">
+            <rect width="860" height="390" fill="#fff"/>
+            <defs><marker id="a7" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#c4561a"/></marker>
+            <marker id="a7p" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7a4fb0"/></marker></defs>
+            <g font-family="sans-serif">
+            <text x="210" y="28" font-size="19" text-anchor="middle" font-weight="700" fill="#222">2번 · ⑦ 바닥 ~ 축 끝</text>
+            <text x="645" y="28" font-size="19" text-anchor="middle" font-weight="700" fill="#222">1번 · ⑥ 카드를 세워 대고 재기</text>
+            <line x1="428" y1="10" x2="428" y2="380" stroke="#ddd" stroke-width="2"/>
+            <!-- 왼쪽: 전체 높이 -->
+            <rect x="26" y="210" width="226" height="17" rx="3" fill="#3b63c4"/>
+            <rect x="60" y="173" width="157" height="157" rx="5" fill="#2b4fa8"/>
+            <rect x="158" y="160" width="36" height="13" fill="#2b4fa8"/>
+            <rect x="159" y="127" width="34" height="33" fill="#cfcfcf" stroke="#999"/>
+            <text x="138" y="285" fill="#fff" font-size="18" text-anchor="middle" font-weight="700">MG90S</text>
+            <text x="138" y="306" fill="#fff" font-size="13" text-anchor="middle">혼 뺀 상태</text>
+            <rect x="40" y="330" width="230" height="12" fill="#8a8a8a"/>
+            <rect x="140" y="115" width="130" height="12" fill="#8a8a8a"/>
+            <text x="205" y="106" font-size="14" text-anchor="middle" fill="#555">턱을 축 끝 면에</text>
+            <text x="155" y="360" font-size="14" text-anchor="middle" fill="#555">턱을 서보 바닥에</text>
+            <line x1="345" y1="127" x2="345" y2="330" stroke="#c4561a" stroke-width="3" marker-start="url(#a7)" marker-end="url(#a7)"/>
+            <line x1="274" y1="127" x2="352" y2="127" stroke="#c4561a" stroke-dasharray="4 3"/><line x1="274" y1="330" x2="352" y2="330" stroke="#c4561a" stroke-dasharray="4 3"/>
+            <text x="356" y="222" font-size="20" fill="#c4561a" font-weight="700">⑦</text>
+            <text x="356" y="244" font-size="13" fill="#666">설계 29.0</text>
+            <line x1="20" y1="227" x2="20" y2="330" stroke="#7a4fb0" stroke-width="3" marker-start="url(#a7p)" marker-end="url(#a7p)"/>
+            <text x="30" y="382" font-size="14" fill="#7a4fb0" font-weight="700">⑤ 날개 높이 14.71 (설계 16.0)</text>
+            <!-- 오른쪽: 카드 방법 -->
+            <text x="645" y="52" font-size="17" text-anchor="middle" fill="#c4561a" font-weight="700">⑥ = ⓑ − ⓒ − ⓐ÷2</text>
+            <rect x="470" y="173" width="157" height="157" rx="5" fill="#2b4fa8"/>
+            <rect x="567" y="160" width="36" height="13" fill="#2b4fa8"/>
+            <rect x="568" y="127" width="34" height="33" fill="#cfcfcf" stroke="#999"/>
+            <text x="540" y="285" fill="#fff" font-size="18" text-anchor="middle" font-weight="700">서보</text>
+            <rect x="627" y="96" width="6" height="238" fill="#e3a33b"/>
+            <text x="642" y="300" font-size="15" fill="#a86a12" font-weight="700">카드</text>
+            <text x="642" y="320" font-size="13" fill="#666">끝면에 딱 붙여 세움</text>
+            <text x="642" y="262" font-size="15" fill="#a86a12" font-weight="700">ⓒ 카드 두께</text>
+            <rect x="520" y="62" width="190" height="14" rx="3" fill="#8a8a8a"/>
+            <rect x="557" y="76" width="11" height="74" fill="#8a8a8a"/>
+            <rect x="633" y="76" width="11" height="74" fill="#8a8a8a"/>
+            <text x="716" y="74" font-size="14" fill="#555">캘리퍼스</text>
+            <line x1="568" y1="110" x2="627" y2="110" stroke="#c4561a" stroke-width="3" marker-start="url(#a7)" marker-end="url(#a7)"/>
+            <text x="597" y="103" font-size="17" text-anchor="middle" fill="#c4561a" font-weight="700">ⓑ</text>
+            <text x="652" y="130" font-size="13" fill="#555">한 턱: 카드 바깥면</text>
+            <text x="440" y="130" font-size="13" fill="#555">다른 턱:</text>
+            <text x="440" y="147" font-size="13" fill="#555">축 먼 쪽 옆면</text>
+            <line x1="585" y1="120" x2="585" y2="362" stroke="#7a4fb0" stroke-dasharray="4 3"/>
+            <line x1="627" y1="334" x2="627" y2="362" stroke="#7a4fb0" stroke-dasharray="4 3"/>
+            <line x1="585" y1="355" x2="627" y2="355" stroke="#7a4fb0" stroke-width="3" marker-start="url(#a7p)" marker-end="url(#a7p)"/>
+            <text x="606" y="380" font-size="16" text-anchor="middle" fill="#7a4fb0" font-weight="700">⑥ 축 가운데 ~ 몸통 끝</text>
+            </g>
+          </svg>
+          <figcaption>왼쪽: 축 끝은 서보에서 가장 높은 곳이라 턱이 바로 닿습니다. 오른쪽: 카드가 몸통 끝면을 위로 늘려 주어서, 두 턱을 모두 축 높이에서 댈 수 있습니다. 턱 끝은 몸통 윗면에 닿지 않을 만큼만 내립니다.</figcaption>
+        </figure>
+        <div class="box ok">
+          <h3>11/7 밤 사진으로 받은 값 (설계에 반영함)</h3>
+          <ul>
+            <li><b>MG90S:</b> ⑦ 바닥~축 끝 <b>31.59</b> (설계 29.0 보다 2.6 큼) · 바닥~날개 윗면 19.50 · ⓑ 8.89, ⓒ 0.81, ⓐ 4.89 → <b>⑥ 5.64</b></li>
+            <li><b>SG51R:</b> 길이 21.61 · 덮개 뺀 높이 15.94 · 축 지름 3.82 · 축 먼 쪽~덮개 끝면 7.59 → <b>⑥ 5.68</b> (덮개 끝면이 몸통 끝면과 같은 면이라 카드 없이 잴 수 있었습니다)</li>
+            <li><b>서보가 길어져서 바꾼 곳:</b> 목 아래 무게추 와셔 3장 → <b>2장</b>(3장이면 목 서보 바닥과 1.1mm 겹침), 머리 안 세로 판을 1.6mm 안쪽으로, 끄덕임 핀 받침을 바깥쪽으로. 10가지 자세 모두 겹침 없음.</li>
+          </ul>
+          <h3>아직 남은 것</h3>
+          <ul>
+            <li><b>MG90S 날개 두께:</b> 날개 끝을 턱으로 위아래로 집어서 잽니다. 목 받침판이 날개 <b>아랫면</b>을 받치는데, 아랫면 높이 = 19.50 − 두께 입니다. 지금은 2.5 로 놓았습니다. (전에 적은 ⑤ 14.71 은 날개 윗면 19.50 과 4.8mm 차이라 날개 두께로는 너무 두꺼워서, 다른 곳을 잰 것 같습니다.)</li>
+            <li><b>MG90S ① 길이</b> (아래 3번)</li>
+            <li><b>SG51R 바닥 ~ 축 끝:</b> MG90S ⑦ 과 같은 방법. 함께 <b>덮개 길이</b>(축 쪽 몸통 끝면 ~ 볼록한 덮개의 반대쪽 끝)도 재 주세요. 눈썹·눈꺼풀 혼이 덮개 위에 얹히므로, 덮개를 따로 그려야 혼 높이가 맞습니다. 그때까지는 덮개 자리를 몸체 높이 17.0 으로 덮어 두었습니다.</li>
+            <li><b>공차 판 B 결과</b> (아래 5번)</li>
+          </ul>
+        </div>
+        <ol>
+          <li><b>MG90S ⑥ 축 위치</b> — 기록에 4.8 로 적혀 있는데, 축 지름 ⓐ(4.8)과 같은 값입니다. 축 지름을 한 번 더 적은 것 같습니다.
+            <br><b>왜 필요한가:</b> 목 받침판에서 서보 축 구멍을 어디에 뚫을지 정합니다. 1mm 틀리면 서보 축이 베어링 한가운데에서 벗어나, 고개가 돌 때 머리가 원을 그리며 흔들립니다.
+            <br><b>재는 법 (그림 오른쪽):</b>
+            <br>① 혼을 빼고 서보를 책상에 세웁니다.
+            <br>② 교통카드처럼 단단한 카드를 <b>축에 가까운 쪽 몸통 끝면</b>에 딱 붙여 세웁니다. 손가락으로 누르거나 테이프로 붙입니다. 카드와 끝면 사이가 뜨면 그만큼 크게 나옵니다.
+            <br>③ 카드 두께 ⓒ 를 잽니다. 교통카드는 보통 0.76 쯤입니다.
+            <br>④ 캘리퍼스 한 턱을 카드 바깥면에, 다른 턱을 축(톱니 기둥)의 <b>먼 쪽 옆면</b>에 대고 ⓑ 를 잽니다.
+            <br>⑤ 아래 MG90S 칸의 ⓑ·ⓒ 에 넣으면 ⑥ 이 계산돼 나옵니다. 4.8 을 지우고 그 값을 ⑥ 칸에 적습니다. 설계값은 6.0 이라 5~7 사이가 나오면 정상입니다.</li>
+          <li><b>MG90S ⑦ 바닥 ~ 축 끝 전체 높이</b> (새 칸)
+            <br><b>왜 필요한가:</b> 목 안에서 MG90S 는 양쪽 날개로 받침판에 걸려 매달립니다. 날개 높이 ⑤ 가 설계(16.0)보다 <b>1.3mm 낮게(14.71)</b> 나왔습니다. 서보 전체 키가 같다면, 날개 위로 솟은 부분이 1.3mm 길어지고 축과 혼도 그만큼 위로 올라갑니다. 그러면 혼이 위쪽 받침판의 베어링 턱에 닿아 고개가 안 돌 수 있습니다. ⑦ 을 알면 "날개 아래면에서 축 끝까지"(⑦ − ⑤)를 계산해서 서보 자리 높이를 맞춥니다.
+            <br><b>재는 법 (그림 왼쪽):</b> 혼과 혼 나사를 뺍니다. 한 턱 안쪽 면에 서보 바닥을 평평하게 대고, 다른 턱을 축 끝에 닿을 때까지 닫습니다. 턱이 톱니 기둥 옆이 아니라 <b>맨 위 끝 면</b>에 닿아야 합니다. 설계값은 29.0 입니다.</li>
+          <li><b>MG90S ① 길이</b> 다시
+            <br><b>왜 필요한가:</b> 서보가 들어갈 창의 길이입니다. 22.41 이 맞으면 창을 0.4mm 줄이는데, 턱이 날개나 윗면 톱니 덮개에 걸친 채 잰 값이라면 실제 몸통보다 짧게 나온 것이라 창을 줄이면 서보가 안 들어갑니다.
+            <br><b>재는 법:</b> 날개보다 아래, 바닥에서 1cm 쯤 되는 <b>스티커 붙은 몸통</b>을 턱 안쪽 깊숙이 넣고 양 끝면을 잽니다. 두세 번 재서 가운데 값을 ① 칸에 덮어 적습니다.</li>
+          <li><b>SG51R ③ 톱니 덮개를 뺀 높이와 ⑥</b>
+            <br><b>왜 필요한가:</b> SG51R 은 눈꺼풀과 눈썹을 움직이며, 눈 틀 안의 좁은 자리에 들어갑니다. 지금 ③ 19.4 는 축을 둘러싼 볼록한 톱니 덮개까지 잰 값이라, 덮개를 뺀 설계값 17.0 과 비교할 수 없습니다. ⑥ 은 서보 축과 눈꺼풀 크랭크가 일직선이 되게 하는 값입니다.
+            <br><b>재는 법:</b> ③ — 바닥을 한 턱에 대고, 다른 턱은 <b>덮개가 없는 쪽 몸통 윗면</b>에 댑니다. 덮개가 윗면 전체를 덮고 있으면 19.4 를 그대로 두고 치수 메모에 "덮개가 윗면 전체"라고 적어 주세요. ⑥ — 1번과 같은 카드 방법입니다. 작은 서보 칸의 ⓑ 에 넣으면 계산됩니다.</li>
+          <li><b>공차 판 B 결과 (10번 단계)</b>
+            <br><b>왜 필요한가:</b> 서보 창의 여유(+0.2 / +0.4 / +0.6)는 2차 출력의 서보 자리 다섯 곳(목 2, 눈 3)에 모두 그대로 들어갑니다. 10번 단계는 끝냈다고 체크돼 있는데 결과 두 칸이 비어 있습니다.
+            <br><b>하는 법:</b> <a href="#s10">10번 단계</a>로 가서, MG90S 와 SG51R 이 각각 <b>들어가는 창 중 가장 빡빡한 창</b>을 고릅니다. 기억이 안 나면 다시 끼워 봐도 1분이면 됩니다.</li>
+        </ol>
+        <p class="small">다 적으면 맨 아래 <a href="#rec">기록</a>에서 "기록 복사"로 다시 보내 주세요.</p>
+      </div>
+
+      <h3>MG90S 한 개 <span class="ref">설계에 쓴 값: ① 22.8 ② 12.2 ③ 22.7 ④ 32.2 ⑤ 16.0 ⑥ 6.0<br>11/7 잰 값: ① 22.41(다시) ② 11.80 ③ 22.4 ④ 32.2 ⑤ 14.71 ⑥ 다시 ⑦ 아직 · 축 지름 4.8</span></h3>
+      <div class="grid">
+        <label class="f">① 길이<input type="number" step="0.01" data-save id="m-mg-l" data-label="MG90S 길이" inputmode="decimal"></label>
+        <label class="f">② 폭<input type="number" step="0.01" data-save id="m-mg-w" data-label="MG90S 폭" inputmode="decimal"></label>
+        <label class="f">③ 높이<input type="number" step="0.01" data-save id="m-mg-h" data-label="MG90S 높이" inputmode="decimal"></label>
+        <label class="f">④ 날개 끝~끝<input type="number" step="0.01" data-save id="m-mg-tab" data-label="MG90S 날개 길이" inputmode="decimal"></label>
+        <label class="f">⑤ 바닥~날개 아래<input type="number" step="0.01" data-save id="m-mg-tabz" data-label="MG90S 날개 높이" inputmode="decimal"></label>
+        <label class="f">⑥ 축~끝<input type="number" step="0.01" data-save id="m-mg-shaft" data-label="MG90S 축 위치" inputmode="decimal"></label>
+        <label class="f">ⓐ 축 지름<input type="number" step="0.01" data-save id="m-mg-shd" data-label="MG90S 축 지름" inputmode="decimal"></label>
+        <label class="f">⑦ 바닥~축 끝<input type="number" step="0.01" data-save id="m-mg-total" data-label="MG90S 바닥~축 끝" inputmode="decimal"></label>
+        <label class="f">ⓑ 카드~축 먼 쪽<input type="number" step="0.01" data-save id="m-mg-b" data-label="MG90S ⓑ" inputmode="decimal"></label>
+        <label class="f">ⓒ 카드 두께<input type="number" step="0.01" data-save id="m-card" data-label="카드 두께" inputmode="decimal"></label>
+      </div>
+      <p class="small" id="mg-calc"></p>
+      <div class="box warn alert" id="mg-shaft-alert">MG90S ⑥ 칸 값이 축 지름 ⓐ 과 같습니다. 축 지름을 한 번 더 적은 것 같습니다. 위 "다시 재 주실 것" 1번 방법으로 다시 재서 고쳐 주세요.</div>
+      <h3>작은 파란 서보 한 개 <span class="ref">설계에 쓴 값: ① 21.5 ② 11.7 ③ 17.0 ⑥ 5.5<br>11/7 잰 값 (SG51R): ① 21.0 ② 12.32 ③ 19.4(톱니 덮개 포함, 다시) ④ 30.0 ⑥ 아직 · 축 지름 4.8</span></h3>
+      <div class="grid">
+        <label class="f">① 길이<input type="number" step="0.01" data-save id="m-sg-l" data-label="작은 서보 길이" inputmode="decimal"></label>
+        <label class="f">② 폭<input type="number" step="0.01" data-save id="m-sg-w" data-label="작은 서보 폭" inputmode="decimal"></label>
+        <label class="f">③ 높이<input type="number" step="0.01" data-save id="m-sg-h" data-label="작은 서보 높이" inputmode="decimal"></label>
+        <label class="f">⑥ 축~끝<input type="number" step="0.01" data-save id="m-sg-shaft" data-label="작은 서보 축 위치" inputmode="decimal"></label>
+        <label class="f">④ 날개 끝~끝<input type="number" step="0.01" data-save id="m-sg-tab" data-label="작은 서보 날개 길이" inputmode="decimal"></label>
+        <label class="f">ⓐ 축 지름<input type="number" step="0.01" data-save id="m-sg-shd" data-label="작은 서보 축 지름" inputmode="decimal"></label>
+        <label class="f">ⓑ 카드~축 먼 쪽<input type="number" step="0.01" data-save id="m-sg-b" data-label="작은 서보 ⓑ" inputmode="decimal"></label>
+      </div>
+      <p class="small" id="sg-calc"></p>
+      <div class="box warn alert" id="sg-shaft-alert">작은 서보 ⑥ 칸 값이 축 지름 ⓐ 과 같습니다. 카드 방법으로 다시 재 주세요.</div>
+      <label class="f">치수 메모<textarea data-save id="m-size-note" data-label="치수 메모"></textarea></label>
+      <div class="box warn alert" id="sg-big">작은 서보가 설계보다 큽니다(길이 22.5 넘음 또는 높이 20 넘음). 이 서보는 지금 출력된 눈 틀에 넣지 않습니다. 책상 시험은 그대로 하고, 눈 자리는 이 숫자로 다시 그립니다.</div>
+      <h3>베어링 <span class="ref">설계 값: 안 10 · 바깥 19 · 두께 5 (6800ZZ)</span></h3>
+      <div class="grid">
+        <label class="f">안쪽 구멍 지름<input type="number" step="0.01" data-save id="m-brg-id" data-label="베어링 안지름" inputmode="decimal"></label>
+        <label class="f">바깥 지름<input type="number" step="0.01" data-save id="m-brg-od" data-label="베어링 바깥지름" inputmode="decimal"></label>
+        <label class="f">두께<input type="number" step="0.01" data-save id="m-brg-t" data-label="베어링 두께" inputmode="decimal"></label>
+        <label class="f">옆면 글자<input type="text" data-save id="m-brg-mark" data-label="베어링 글자" placeholder="6800ZZ"></label>
+      </div>
+      <h3>있으면 같이 <span class="ref">머리 안 배치에 씁니다</span></h3>
+      <div class="grid">
+        <label class="f">카메라 리본 길이<input type="number" step="1" data-save id="m-cam" data-label="카메라 리본 길이" inputmode="numeric"></label>
+        <label class="f">렌즈 바깥 지름<input type="number" step="0.01" data-save id="m-lens" data-label="렌즈 지름" inputmode="decimal"></label>
+        <label class="f">스피커 지름<input type="number" step="0.01" data-save id="m-spk-d" data-label="스피커 지름" inputmode="decimal"></label>
+        <label class="f">스피커 두께<input type="number" step="0.01" data-save id="m-spk-t" data-label="스피커 두께" inputmode="decimal"></label>
+      </div>
+      <p class="muted small">카메라 리본은 지금 소켓에 꽂혀 있으니, 리본을 당기지 말고 렌즈 쪽 끝에서 소켓 입구까지 보이는 길이만 재면 됩니다.</p>
+      <p class="okline">MG90S, 작은 서보, 베어링 칸이 채워져 있습니다.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ───────── 3 공차 판 ───────── -->
+<section id="p3">
+  <div class="part-h"><div class="eyebrow">3 · 공차 판</div><h2>꼭 맞는 구멍 크기를 고릅니다</h2><p>필요한 것: 1차 출력물, 인두, M2 인서트·나사, 황동봉, 피아노선, 서보, 베어링.</p></div>
+
+  <div class="box blue">
+    <h3>공차 판이 뭔가요?</h3>
+    <p>3D 프린터는 녹인 플라스틱을 실처럼 쌓아서 모양을 만듭니다. 그래서 설계에 "구멍 지름 3.0mm" 라고 그려도 실제 구멍은 조금 작게 나오는 경우가 많습니다. 얼마나 작게 나올지는 프린터와 재료마다 다릅니다.</p>
+    <p>그래서 <b>같은 구멍을 크기만 조금씩 다르게 여러 개 뚫은 판</b>을 먼저 뽑았습니다. 실제 부품을 하나씩 끼워 보고 가장 잘 맞는 구멍의 숫자를 고르면, 그 숫자로 진짜 부품(몸통·머리 뒤)을 출력합니다. 이렇게 하면 비싼 큰 부품을 다시 뽑는 일이 줄어듭니다.</p>
+  </div>
+
+  <figure class="fig">
+    <img src="print-map.jpg" alt="10월 29일 받은 1차 출력물 사진. A B C 는 검은 공차 판 세 장, 1~8 은 머리와 눈, 목 부품.">
+    <figcaption>10/29 에 받은 1차 출력물입니다. 초록 번호는 5번 구역에서 씁니다.</figcaption>
+  </figure>
+  <div class="legend">
+    <span class="lg-g"><b>A</b>구멍 판 — 작은 구멍 4줄</span>
+    <span class="lg-g"><b>B</b>네모 창 판 — 서보가 들어갈 창 6개</span>
+    <span class="lg-g"><b>C</b>둥근 자리 판 — 베어링 자리 4개</span>
+    <span class="lg-g"><b>1</b>머리 앞 껍데기 (얼굴)</span>
+    <span class="lg-g"><b>2</b>머리 안 틀 (서보·보드를 붙이는 뼈대)</span>
+    <span class="lg-g"><b>3</b>검은자 등 눈 부품 (지지대 붙은 채)</span>
+    <span class="lg-g"><b>4</b>눈썹 부품 (지지대 붙은 채)</span>
+    <span class="lg-g"><b>5</b>목 요크</span>
+    <span class="lg-g"><b>6</b>목 받침판 (몸통 위 뚜껑)</span>
+    <span class="lg-g"><b>7</b>흰자 돔 2개</span>
+    <span class="lg-g"><b>8</b>눈꺼풀 2개</span>
+  </div>
+  <p class="muted small">3·4·5번은 사진만으로 이름을 정확히 가리기 어렵습니다. 지지대를 떼면 모양이 드러나니, 다르면 메모에 적어 주세요.</p>
+
+  <article class="step" data-step id="s7">
+    <label class="step-h"><input type="checkbox" data-save id="c7"><span class="num">7</span><span class="step-t">판 A·B·C 를 찾아 숫자를 읽습니다</span></label>
+    <div class="step-b">
+      <figure class="fig">
+        <svg viewBox="0 0 760 300" role="img" aria-label="공차 판 세 장의 배치. A 는 네 줄 구멍, B 는 위아래 두 줄 창, C 는 둥근 자리 네 개.">
+          <rect width="760" height="300" fill="#fff"/>
+          <g font-family="Menlo,monospace" font-size="13" fill="#333">
+          <text x="20" y="22" font-family="sans-serif" font-size="17" font-weight="700" fill="#2c6e49">A 구멍 판</text>
+          <rect x="20" y="32" width="250" height="250" rx="8" fill="#2a2a2a"/>
+          <g fill="#fff">
+            <circle cx="60" cy="70" r="7"/><circle cx="110" cy="70" r="7"/><circle cx="160" cy="70" r="7.4"/><circle cx="210" cy="70" r="7.8"/>
+            <circle cx="60" cy="130" r="5"/><circle cx="110" cy="130" r="5.6"/><circle cx="160" cy="130" r="6.2"/>
+            <circle cx="60" cy="190" r="4.6"/><circle cx="110" cy="190" r="5"/><circle cx="160" cy="190" r="5.4"/>
+            <circle cx="60" cy="245" r="2.6"/><circle cx="110" cy="245" r="3"/><circle cx="160" cy="245" r="3.4"/>
+          </g>
+          <g fill="#ddd" font-size="12" text-anchor="middle">
+            <text x="60" y="96">2.9</text><text x="110" y="96">3.0</text><text x="160" y="96">3.1</text><text x="210" y="96">3.2</text>
+            <text x="60" y="156">2.2</text><text x="110" y="156">2.4</text><text x="160" y="156">2.6</text>
+            <text x="60" y="214">2.0</text><text x="110" y="214">2.15</text><text x="160" y="214">2.3</text>
+            <text x="60" y="268">1.1</text><text x="110" y="268">1.25</text><text x="160" y="268">1.4</text>
+          </g>
+          <g font-family="sans-serif" font-size="13" fill="#2c6e49" font-weight="700">
+            <text x="282" y="74">1줄: 인서트</text><text x="282" y="134">2줄: M2 나사</text><text x="282" y="194">3줄: 황동봉</text><text x="282" y="249">4줄: 피아노선</text>
+          </g>
+          <text x="440" y="22" font-family="sans-serif" font-size="17" font-weight="700" fill="#2c6e49">B 네모 창 판</text>
+          <rect x="440" y="32" width="300" height="140" rx="8" fill="#2a2a2a"/>
+          <g fill="#fff"><rect x="458" y="50" width="78" height="40"/><rect x="551" y="50" width="80" height="41"/><rect x="646" y="50" width="82" height="42"/>
+          <rect x="460" y="112" width="74" height="38"/><rect x="553" y="112" width="76" height="39"/><rect x="648" y="112" width="78" height="40"/></g>
+          <g fill="#ddd" font-size="12" text-anchor="middle"><text x="497" y="104">+0.2</text><text x="591" y="104">+0.4</text><text x="687" y="104">+0.6</text><text x="497" y="165">+0.2</text><text x="591" y="165">+0.4</text><text x="687" y="165">+0.6</text></g>
+          <g font-family="sans-serif" font-size="13" fill="#2c6e49" font-weight="700"><text x="440" y="190">윗줄: MG90S · 아랫줄: 작은 서보</text></g>
+          <text x="440" y="222" font-family="sans-serif" font-size="17" font-weight="700" fill="#2c6e49">C 둥근 자리 판</text>
+          <rect x="440" y="232" width="300" height="60" rx="8" fill="#2a2a2a"/>
+          <g fill="#fff"><circle cx="478" cy="262" r="20"/><circle cx="551" cy="262" r="20.2"/><circle cx="624" cy="262" r="20.4"/><circle cx="697" cy="262" r="20.6"/></g>
+          <g fill="#333" font-size="12" text-anchor="middle"><text x="478" y="266">19.0</text><text x="551" y="266">19.1</text><text x="624" y="266">19.2</text><text x="697" y="266">19.3</text></g>
+          </g>
+        </svg>
+        <figcaption>판마다 구멍 옆에 숫자가 새겨져 있습니다(그림은 배치만 보여 주는 약도입니다). 숫자는 설계 지름(mm)이고, B 판의 +0.2 는 "서보 몸체보다 0.2mm 크게 뚫었다"는 뜻입니다.</figcaption>
+      </figure>
+      <ol>
+        <li>사진의 A·B·C 판 세 장을 꺼냅니다.</li>
+        <li>판 가장자리에 붙은 얇은 테두리나 <button class="t" data-t="support">지지대</button>가 있으면 니퍼로 뗍니다. <b>구멍 안은 칼로 깎지 않습니다.</b> 깎으면 판의 의미가 없어집니다.</li>
+        <li>얼굴(1번), 머리 안 틀(2번), 목(5·6번)은 아직 건드리지 않습니다.</li>
+      </ol>
+      <p class="okline">세 판의 숫자가 읽힙니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s8">
+    <label class="step-h"><input type="checkbox" data-save id="c8"><span class="num">8</span><span class="step-t">판 A 첫째 줄에 인서트를 박아 봅니다<small>인두 사용</small></span></label>
+    <div class="step-b">
+      <p><button class="t" data-t="insert">열압입 인서트</button>는 플라스틱에 쇠 나사산을 만들어 주는 금색 작은 통입니다. 플라스틱 구멍에 바로 나사를 조이면 몇 번 풀었다 조이면 구멍이 뭉개지지만, 인서트를 박아 두면 여러 번 조여도 괜찮습니다.</p>
+      <figure class="fig">
+        <svg viewBox="0 0 760 250" role="img" aria-label="인서트 박는 순서 세 장면. 구멍 위에 인서트를 올리고, 인두 끝을 넣어 수직으로 누르고, 윗면이 판과 같아지면 뺀다.">
+          <rect width="760" height="250" fill="#fff"/>
+          <g font-family="sans-serif">
+          <!-- 1 -->
+          <rect x="30" y="160" width="200" height="60" fill="#2a2a2a"/><rect x="112" y="160" width="36" height="40" fill="#fff"/>
+          <rect x="112" y="122" width="36" height="34" rx="3" fill="#d6a62b"/><line x1="112" y1="132" x2="148" y2="132" stroke="#a37a12" stroke-width="2"/><line x1="112" y1="144" x2="148" y2="144" stroke="#a37a12" stroke-width="2"/>
+          <text x="130" y="30" font-size="18" text-anchor="middle" font-weight="700" fill="#c4561a">① 올리기</text><text x="290" y="30" font-size="18" text-anchor="end" font-weight="700" fill="#c4561a">②</text><text x="300" y="30" font-size="15" font-weight="700" fill="#c4561a"></text>
+          <text x="130" y="244" font-size="14" text-anchor="middle" fill="#555">넓은 쪽이 위. 똑바로</text>
+          <!-- 2 -->
+          <rect x="280" y="160" width="200" height="60" fill="#2a2a2a"/><rect x="362" y="160" width="36" height="40" fill="#fff"/>
+          <rect x="362" y="140" width="36" height="34" rx="3" fill="#d6a62b"/>
+          <path d="M372 140 L380 60 L388 140 Z" fill="#8c8c8c"/><rect x="372" y="20" width="16" height="44" fill="#555"/>
+          <path d="M415 70 L415 120" stroke="#c4561a" stroke-width="4" marker-end="url(#a3)"/>
+          
+          <text x="440" y="100" font-size="15" fill="#c4561a" font-weight="700">수직으로</text>
+          <text x="440" y="120" font-size="15" fill="#c4561a" font-weight="700">살살</text>
+          <text x="380" y="244" font-size="14" text-anchor="middle" fill="#555">② 인두 끝을 넣고 3초 → 누르기</text>
+          <!-- 3 -->
+          <rect x="530" y="160" width="200" height="60" fill="#2a2a2a"/><rect x="612" y="160" width="36" height="34" rx="3" fill="#d6a62b"/>
+          <line x1="560" y1="160" x2="700" y2="160" stroke="#2c6e49" stroke-width="2" stroke-dasharray="5 4"/>
+          <text x="630" y="30" font-size="18" text-anchor="middle" font-weight="700" fill="#c4561a">③ 면과 같아지면 끝</text>
+          <text x="630" y="130" font-size="15" text-anchor="middle" fill="#2c6e49" font-weight="700">윗면이 판과 평평</text>
+          <text x="630" y="244" font-size="14" text-anchor="middle" fill="#555">인두를 똑바로 빼고 30초 식히기</text>
+          </g>
+          <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#c4561a"/></marker></defs>
+        </svg>
+        <figcaption>인두 끝은 인서트 구멍 안에 살짝 넣어 인서트만 데웁니다. 인두로 판을 직접 누르지 않습니다.</figcaption>
+      </figure>
+      <ol>
+        <li>인두 온도를 약 <b>200°C</b> 로 맞춥니다. 온도 조절이 없는 인두면 켜고 1~2분 뒤에 씁니다.</li>
+        <li>판 A 첫째 줄 <b>2.9</b> 구멍 위에 인서트를 올립니다. 겉에 톱니가 있는 통인데, 한쪽이 조금 더 넓으면 넓은 쪽이 위입니다.</li>
+        <li>인두 끝을 인서트 구멍에 넣고 <b>3초쯤 기다린 뒤</b>, 힘을 거의 주지 않고 수직으로 누릅니다. 녹으면서 저절로 들어갑니다. <span class="never">비틀거나 기울이지 않습니다.</span></li>
+        <li>인서트 윗면이 판 면과 같아지면 인두를 똑바로 위로 뺍니다. 30초 식힙니다.</li>
+        <li>M2 나사를 두 바퀴만 조여 봅니다.</li>
+        <li>3.0, 3.1, 3.2 구멍에도 똑같이 합니다. 비교하려면 네 구멍 모두 박아 보는 게 좋습니다.</li>
+      </ol>
+      <table>
+        <thead><tr><th>보이는 것</th><th>뜻</th></tr></thead>
+        <tbody>
+          <tr><td>인서트 둘레 플라스틱이 부풀거나 갈라짐</td><td>구멍이 너무 작음</td></tr>
+          <tr><td>나사를 조이면 인서트가 같이 빙글 돎</td><td>구멍이 너무 큼</td></tr>
+          <tr><td>똑바로 들어가고, 나사를 조여도 안 돎</td><td><b>이 숫자를 고릅니다</b></td></tr>
+        </tbody>
+      </table>
+      <label class="f" style="max-width:280px">맞는 인서트 구멍
+        <select data-save id="m-ins" data-label="인서트 구멍"><option value="">아직</option><option>2.9</option><option>3.0</option><option>3.1</option><option>3.2</option><option>맞는 것 없음</option></select>
+      </label>
+      <details class="stuck"><summary>인서트가 비뚤어졌어요</summary><p>아직 따뜻할 때 인두를 다시 넣어 살짝 세우면 바로잡힐 때가 많습니다. 안 되면 그 구멍은 비교에서 빼고 다음 구멍으로 갑니다. 시험 판이라 괜찮습니다.</p></details>
+      <p class="okline">한 숫자가 골라져 있습니다. 얼굴(앞 껍데기)에는 아직 박지 않습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s9">
+    <label class="step-h"><input type="checkbox" data-save id="c9"><span class="num">9</span><span class="step-t">판 A 나머지 세 줄에 나사·황동봉·피아노선을 넣어 봅니다</span></label>
+    <div class="step-b">
+      <table>
+        <thead><tr><th>줄</th><th>넣어 볼 것</th><th>고르는 기준</th></tr></thead>
+        <tbody>
+          <tr><td>2줄 (2.2 / 2.4 / 2.6)</td><td>M2 나사</td><td>손으로 밀어 <b>힘없이 지나가는 가장 작은</b> 구멍. 나사가 걸리지 않고 통과해야 두 부품을 조일 수 있습니다.</td></tr>
+          <tr><td>3줄 (2.0 / 2.15 / 2.3)</td><td><button class="t" data-t="brass">황동봉</button> 2mm</td><td>넣고 돌리면 <b>부드럽게 돌고 덜컹거리지 않는</b> 구멍. 눈꺼풀이 이 봉을 축으로 돕니다.</td></tr>
+          <tr><td>4줄 (1.1 / 1.25 / 1.4)</td><td><button class="t" data-t="piano">피아노선</button> 1mm</td><td><b>걸리지 않고 도는</b> 구멍. 서보와 눈꺼풀을 잇는 막대가 들어갑니다.</td></tr>
+        </tbody>
+      </table>
+      <div class="grid">
+        <label class="f">나사 구멍<select data-save id="m-screw" data-label="나사 구멍"><option value="">아직</option><option>2.2</option><option>2.4</option><option>2.6</option><option>안 맞음</option></select></label>
+        <label class="f">황동봉 구멍<select data-save id="m-rod" data-label="황동봉 구멍"><option value="">아직</option><option>2.0</option><option>2.15</option><option>2.3</option><option>안 맞음</option></select></label>
+        <label class="f">피아노선 구멍<select data-save id="m-wire" data-label="피아노선 구멍"><option value="">아직</option><option>1.1</option><option>1.25</option><option>1.4</option><option>안 맞음</option></select></label>
+      </div>
+      <p class="okline">세 칸이 채워져 있습니다. 봉과 선은 아직 자르지 않습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s10">
+    <label class="step-h"><input type="checkbox" data-save id="c10"><span class="num">10</span><span class="step-t">판 B 창에 서보 몸체를 끼워 봅니다</span></label>
+    <div class="step-b">
+      <ol>
+        <li>서보에서 혼을 뺍니다(끼워져 있으면 위로 당기면 빠집니다).</li>
+        <li>윗줄 창에는 MG90S, 아랫줄 창에는 작은 서보를 넣습니다. 몸체를 <b>손으로만</b> 밀어 넣습니다.</li>
+        <li>+0.2 부터 시도해서, <b>들어가는 창 중 가장 빡빡한 것</b>을 고릅니다. 서보가 창 안에서 흔들리지 않고, 손으로 빼낼 수 있으면 딱 좋습니다.</li>
+      </ol>
+      <p class="never">망치로 치지 않습니다. 서보 축을 손으로 세게 돌리지 않습니다(안의 톱니가 상합니다).</p>
+      <div class="grid">
+        <label class="f">MG90S 창<select data-save id="m-mg-fit" data-label="MG90S 창 여유"><option value="">아직</option><option>+0.2</option><option>+0.4</option><option>+0.6</option><option>안 들어감</option></select></label>
+        <label class="f">작은 서보 창<select data-save id="m-sg-fit" data-label="작은 서보 창 여유"><option value="">아직</option><option>+0.2</option><option>+0.4</option><option>+0.6</option><option>안 들어감</option></select></label>
+      </div>
+      <div class="box warn alert" id="fit-missing">이 단계는 끝냈다고 체크돼 있는데 창 결과가 비어 있습니다. 이 값은 2차 출력의 서보 자리 다섯 곳에 모두 쓰이니, 어느 창이 맞았는지 골라 주세요.</div>
+      <p class="okline">두 칸이 채워져 있습니다. 안 들어가면 "안 들어감"을 고르고, 머리 틀의 창을 칼로 넓히지 않습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s11">
+    <label class="step-h"><input type="checkbox" data-save id="c11"><span class="num">11</span><span class="step-t">판 C 에 베어링을 눌러 봅니다</span></label>
+    <div class="step-b">
+      <p><button class="t" data-t="bearing">베어링</button>은 목에서 머리 무게를 받아, 고개가 부드럽게 돌게 해 주는 쇠 고리입니다.</p>
+      <ol>
+        <li>베어링을 자리 위에 수평으로 놓고 엄지로 <b>바깥 링</b>을 수직으로 누릅니다.</li>
+        <li>들어가고, 판을 뒤집어도 떨어지지 않는 자리를 고릅니다.</li>
+        <li>너무 빡빡해서 판이 휘면 다음 숫자로 갑니다. 빼낼 때는 판 아래 작은 구멍으로 연필 끝을 넣어 밀면 됩니다.</li>
+      </ol>
+      <label class="f" style="max-width:280px">맞는 베어링 자리<select data-save id="m-brg-fit" data-label="베어링 자리"><option value="">아직</option><option>19.0</option><option>19.1</option><option>19.2</option><option>19.3</option><option>맞는 것 없음</option></select></label>
+      <p class="muted small">이미 출력된 목 받침판(6번)의 자리는 19.1 로 뽑혀 있습니다. 여기서 19.1 이 맞아야 24번 단계에서 받침판에 넣습니다.</p>
+      <p class="okline">한 숫자가 골라져 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s12">
+    <label class="step-h"><input type="checkbox" data-save id="c12"><span class="num">12</span><span class="step-t">얼굴에 인서트를 박을지 정합니다</span></label>
+    <div class="step-b">
+      <p>얼굴(앞 껍데기)과 머리 안 틀의 인서트 구멍은 <b>3.0</b> 으로 출력돼 있습니다.</p>
+      <ul>
+        <li>8번에서 고른 숫자가 <b>3.0 이면</b>: 얼굴 안쪽 기둥 3곳, 가장자리 탭 6곳에 8번과 같은 방법으로 인서트를 박아도 됩니다. <b>탭은 바깥쪽 면(머리 껍데기 벽을 향한 면, 나중에 뒤 덮개 벽이 덮는 면)에서 박습니다.</b> 뒤 덮개 밖에서 나사가 이 면으로 들어오기 때문입니다. 탭과 뒤 덮개 벽 사이 틈이 0.2mm 뿐이라, 인서트가 조금이라도 튀어나오면 뒤 덮개가 안 닫힙니다. 박은 뒤 따뜻할 때 평평한 쇠붙이로 눌러 면과 같은 높이로 맞춥니다.</li>
+        <li><b>3.0 이 아니면</b>: 얼굴은 그대로 둡니다. 2차 출력 때 구멍 숫자를 바꿔서 다시 뽑습니다.</li>
+      </ul>
+      <label class="f" style="max-width:300px">얼굴 인서트<select data-save id="m-head-ins" data-label="얼굴 인서트"><option value="">아직</option><option>3.0이라 박았다</option><option>3.0이 아니라 남겼다</option></select></label>
+      <p class="okline">위 칸이 채워져 있습니다. 여기까지 하고 쉬어도 됩니다.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ───────── 4 서보 시험 ───────── -->
+<section id="p4">
+  <div class="part-h"><div class="eyebrow">4 · 책상 위 서보 시험</div><h2>몸체에 넣기 전에 서보가 도는지 봅니다</h2><p>필요한 것: XIAO, 헤더, 인두, 브레드보드·점퍼선, 빨간 USB-C 기판, 콘덴서, 서보, 컴퓨터, USB-C 데이터 케이블, 충전기.</p></div>
+
+  <div class="box">
+    <h3>먼저 그림 하나로 이해하기</h3>
+    <p>서보를 움직이려면 두 가지가 필요합니다. <b>"몇 도로 가라"는 명령</b>과 <b>움직일 힘(전기)</b>입니다. 이 시험에서는 둘을 서로 다른 곳에서 받습니다.</p>
+    <figure class="fig">
+      <svg viewBox="0 0 780 330" role="img" aria-label="컴퓨터는 USB 로 XIAO 에 전기와 명령을 준다. 충전기는 전원 기판을 거쳐 서보에 힘을 준다. XIAO 는 신호선으로 서보에 각도를 알려 준다. 둘의 GND 는 한 줄로 이어져 있다.">
+        <rect width="780" height="330" fill="#fff"/>
+        <defs><marker id="a4b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#3458c8"/></marker><marker id="a4o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#c4561a"/></marker><marker id="a4y" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#e08a1e"/></marker><marker id="a4r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#d33a32"/></marker></defs>
+        <g font-family="sans-serif">
+        <rect x="20" y="40" width="150" height="80" rx="12" fill="#e9eef8" stroke="#3458c8"/><text x="95" y="76" text-anchor="middle" font-size="19" font-weight="700" fill="#24408f">컴퓨터</text><text x="95" y="100" text-anchor="middle" font-size="14" fill="#24408f">명령을 보냄</text>
+        <rect x="300" y="40" width="170" height="80" rx="12" fill="#e6f2ea" stroke="#2c6e49"/><text x="385" y="76" text-anchor="middle" font-size="19" font-weight="700" fill="#1f5236">XIAO</text><text x="385" y="100" text-anchor="middle" font-size="14" fill="#1f5236">명령을 신호로 바꿈</text>
+        <line x1="170" y1="80" x2="296" y2="80" stroke="#3458c8" stroke-width="4" marker-end="url(#a4b)"/><text x="233" y="70" text-anchor="middle" font-size="14" fill="#3458c8">USB 선</text>
+        <rect x="20" y="210" width="150" height="80" rx="12" fill="#fbe8da" stroke="#c4561a"/><text x="95" y="246" text-anchor="middle" font-size="19" font-weight="700" fill="#8a3a10">충전기</text><text x="95" y="270" text-anchor="middle" font-size="14" fill="#8a3a10">힘(5V)을 줌</text>
+        <rect x="300" y="210" width="170" height="80" rx="12" fill="#fff4ec" stroke="#c4561a"/><text x="385" y="244" text-anchor="middle" font-size="17" font-weight="700" fill="#8a3a10">빨간 USB-C 기판</text><text x="385" y="268" text-anchor="middle" font-size="14" fill="#8a3a10">→ 브레드보드 레일</text>
+        <line x1="170" y1="250" x2="296" y2="250" stroke="#c4561a" stroke-width="4" marker-end="url(#a4o)"/>
+        <rect x="600" y="120" width="160" height="90" rx="12" fill="#e3e9fb" stroke="#2b4fa8"/><text x="680" y="160" text-anchor="middle" font-size="19" font-weight="700" fill="#24408f">서보</text><text x="680" y="185" text-anchor="middle" font-size="14" fill="#24408f">명령대로 돎</text>
+        <path d="M470 80 C540 80 540 140 596 145" stroke="#e08a1e" stroke-width="4" fill="none" marker-end="url(#a4y)"/><text x="530" y="70" font-size="14" fill="#b26a0e" font-weight="700">주황 = 신호선</text>
+        <path d="M470 250 C540 250 540 190 596 185" stroke="#d33a32" stroke-width="4" fill="none" marker-end="url(#a4r)"/><text x="530" y="285" font-size="14" fill="#d33a32" font-weight="700">빨강 = 힘(5V)</text>
+        <line x1="385" y1="124" x2="385" y2="206" stroke="#222" stroke-width="3" stroke-dasharray="7 5"/><text x="395" y="170" font-size="14" fill="#222" font-weight="700">GND 한 줄로 이음</text>
+        <text x="390" y="22" text-anchor="middle" font-size="15" fill="#a3262f" font-weight="700">XIAO 의 5V 핀은 아무 데도 연결하지 않음</text>
+        </g>
+      </svg>
+      <figcaption>명령은 컴퓨터 → XIAO → 서보(주황 선). 힘은 충전기 → 빨간 기판 → 서보(빨강 선). 두 쪽의 <button class="t" data-t="gnd">GND</button>(전기의 0V 기준선)를 한 줄로 이어야 서보가 신호를 제대로 읽습니다.</figcaption>
+    </figure>
+    <details class="stuck"><summary>왜 컴퓨터 USB 로 서보까지 돌리면 안 되나요?</summary><p>서보는 멈춰 있다가 움직이기 시작하는 순간 전기를 많이 씁니다. MG90S 두 개가 동시에 출발하면 컴퓨터 USB 포트가 주는 양을 넘을 수 있습니다. 그러면 XIAO 가 꺼졌다 켜지거나, 컴퓨터가 USB 포트를 잠시 끊습니다. 충전기는 이런 순간 전류를 더 넉넉하게 줍니다.</p></details>
+  </div>
+
+  <div class="box">
+    <h3><button class="t" data-t="breadboard">브레드보드</button> 읽는 법</h3>
+    <figure class="fig">
+      <svg viewBox="0 0 780 300" role="img" aria-label="브레드보드 구조. 위아래 가장자리의 빨강·파랑 줄은 가로로 이어져 있고, 가운데 구멍들은 홈 위·아래 각각 세로 다섯 칸씩 이어져 있다.">
+        <rect width="780" height="300" fill="#fff"/>
+        <rect x="20" y="20" width="740" height="260" rx="10" fill="#f3f1ea" stroke="#cfcac0"/>
+        <line x1="40" y1="38" x2="740" y2="38" stroke="#d33a32" stroke-width="2"/>
+        <line x1="40" y1="78" x2="740" y2="78" stroke="#2f64d6" stroke-width="2"/>
+        <g fill="#555" id="railholes"></g>
+        <rect x="40" y="46" width="700" height="12" rx="6" fill="#d33a32" opacity=".22"/>
+        <rect x="40" y="62" width="700" height="12" rx="6" fill="#2f64d6" opacity=".22"/>
+        
+        <rect x="40" y="142" width="700" height="14" fill="#ddd8cc"/>
+        <rect x="203" y="92" width="18" height="46" rx="6" fill="#2c6e49" opacity=".28"/>
+        <rect x="203" y="160" width="18" height="46" rx="6" fill="#c4561a" opacity=".28"/>
+        <g id="holes"></g>
+        <g font-family="sans-serif" font-weight="700" font-size="15" stroke="#f3f1ea" stroke-width="6" paint-order="stroke" stroke-linejoin="round">
+          <text x="250" y="122" fill="#2c6e49">↖ 세로 5칸 (a~e) 이 한 묶음</text>
+          <text x="250" y="196" fill="#c4561a">↖ 홈 아래 5칸 (f~j) 은 다른 묶음</text>
+          <text x="480" y="154" fill="#777" font-size="13">가운데 홈: 위·아래는 안 이어짐</text>
+          <text x="40" y="250" fill="#d33a32">빨간 줄 = + 레일 (5V): 가로로 끝까지 한 묶음</text>
+          <text x="40" y="272" fill="#2f64d6">파란 줄 = − 레일 (GND): 가로로 끝까지 한 묶음</text>
+        </g>
+      </svg>
+      <figcaption>판 속에 금속 띠가 숨어 있어서, 같은 묶음의 구멍에 꽂은 다리끼리는 선으로 이은 것과 같습니다. 판에 따라 레일이 <b>가운데에서 끊긴</b> 것도 있습니다(빨간 줄이 중간에 끊겨 그려져 있으면 그렇습니다). 오늘은 모두 판의 <b>왼쪽 절반</b>에서만 작업하면 신경 쓰지 않아도 됩니다.</figcaption>
+    </figure>
+  </div>
+
+  <div class="box">
+    <h3>XIAO 핀 지도 (오늘 쓰는 핀)</h3>
+    <figure class="fig">
+      <svg viewBox="0 0 780 360" role="img" aria-label="XIAO 위에서 본 핀 지도. USB-C 가 위. 왼쪽 위에서부터 D0 고개 좌우, D1 끄덕임, D2 빈칸, D3 눈꺼풀, D4 앰프, D5 눈썹, D6 앰프. 오른쪽 위에서부터 5V 비움, GND 파란 레일, 3V3, D10 D9 D8 비움, D7 앰프.">
+        <rect width="780" height="360" fill="#fff"/>
+        <g font-family="sans-serif">
+        <rect x="300" y="40" width="180" height="300" rx="16" fill="#2e2e2e"/>
+        <rect x="358" y="22" width="64" height="34" rx="8" fill="#b9b9b9"/><text x="390" y="44" text-anchor="middle" font-size="13" font-weight="700">USB-C</text>
+        <rect x="362" y="128" width="56" height="74" rx="6" fill="#6f6f6f"/><text x="390" y="170" text-anchor="middle" font-size="12" fill="#fff">칩</text>
+        <text x="390" y="332" text-anchor="middle" font-size="12" fill="#ccc">윗면(부품 면)</text>
+        <g id="pins"></g>
+        </g>
+      </svg>
+      <figcaption>USB-C 가 위로 오게 놓고 윗면에서 본 모습입니다. 핀 이름은 보드 뒷면에도 인쇄돼 있습니다. 칠해진 핀만 오늘 씁니다. D4·D6·D7 은 나중에 앰프(소리)용으로 비워 둡니다. D8·D9·D10 은 Sense 보드의 SD 카드가 쓰는 핀이라 비웁니다.</figcaption>
+    </figure>
+  </div>
+
+  <article class="step" data-step id="s13">
+    <label class="step-h"><input type="checkbox" data-save id="c13"><span class="num">13</span><span class="step-t">카메라가 붙은 Sense 보드를 떼어 둡니다<span class="opt">권장</span><small>서보 시험에는 카메라가 필요 없습니다</small></span></label>
+    <div class="step-b">
+      <figure class="fig" style="max-width:420px"><img src="xiao-cam-map.jpg" alt="스펀지에 끼워진 XIAO. 위에 카메라와 주황 리본, 아래에 넓은 카메라 소켓이 보인다."><figcaption>지금은 XIAO 본 보드 아래(뒷면)에 <button class="t" data-t="sense">Sense 확장보드</button>가 겹쳐 붙어 있고, 카메라는 Sense 보드에 꽂혀 있습니다.</figcaption></figure>
+      <div class="why">납땜할 때 인두 열과 연기가 카메라 렌즈에 닿지 않게 하고, 보드를 브레드보드에 평평하게 꽂기 위해서입니다. 두 보드는 <button class="t" data-t="b2b">B2B 커넥터</button>로 "딸깍" 끼워져 있을 뿐이라 뗐다 붙일 수 있게 만들어져 있습니다.</div>
+      <ol>
+        <li>보드를 스펀지에서 조심히 빼냅니다. 렌즈와 주황 리본은 손으로 잡지 않습니다.</li>
+        <li>두 보드가 겹친 <b>옆면</b>을 손가락으로 잡고, 한 보드를 옆으로 <b>미끄러지듯</b> 밀어 커넥터에서 빼냅니다(Seeed 공식 안내 방법).</li>
+        <li class="never">위아래로 잡아당기거나, 책을 펼치듯 젖히지 않습니다. 커넥터 다리가 휠 수 있습니다.</li>
+        <li>떼어 낸 Sense 보드(카메라 달린 채)는 스펀지 통에 다시 넣어 둡니다.</li>
+      </ol>
+      <details class="stuck"><summary>너무 단단해서 안 빠져요</summary><p>억지로 하지 말고 붙인 채로 둡니다. 14번에서 헤더를 납땜할 때 인두를 카메라 쪽으로 기울이지 않도록 조심하면 됩니다. 브레드보드에 꽂았을 때 Sense 보드가 판에 닿아 핀이 끝까지 안 들어가면, 점퍼선(수-암)을 헤더 핀에 끼워 브레드보드와 잇는 방법도 있습니다. 그때는 저에게 사진을 보내 주세요.</p></details>
+      <label class="f" style="max-width:280px">Sense 보드<select data-save id="m-sense" data-label="Sense 보드"><option value="">아직</option><option>떼어 냈다</option><option>붙인 채로 둔다</option></select></label>
+      <p class="okline">XIAO 본 보드만 손에 있고, 카메라 쪽은 통에 안전하게 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s14">
+    <label class="step-h"><input type="checkbox" data-save id="c14"><span class="num">14</span><span class="step-t">XIAO 에 7핀 헤더 두 줄을 납땜합니다<small>브레드보드를 받침대로 쓰면 핀이 똑바로 섭니다</small></span></label>
+    <div class="step-b">
+      <figure class="fig">
+        <svg viewBox="0 0 780 300" role="img" aria-label="옆에서 본 납땜 준비. 브레드보드에 헤더의 긴 핀을 꽂으면 검은 플라스틱이 판 위에 얹히고, 그 위에 XIAO 를 USB-C 가 위로 오게 올린 뒤, 위로 나온 짧은 핀과 패드를 인두로 납땜한다.">
+          <rect width="780" height="300" fill="#fff"/>
+          <g font-family="sans-serif">
+          <rect x="60" y="220" width="660" height="50" rx="6" fill="#efece4" stroke="#cfcac0"/><text x="390" y="252" text-anchor="middle" font-size="15" fill="#777">브레드보드</text>
+          <g fill="#c9a33a"><rect x="215" y="172" width="6" height="80"/><rect x="545" y="172" width="6" height="80"/></g>
+          <rect x="203" y="198" width="30" height="22" fill="#222"/><rect x="533" y="198" width="30" height="22" fill="#222"/>
+          <rect x="190" y="184" width="380" height="14" fill="#1f5b3f"/>
+          <rect x="350" y="152" width="70" height="32" rx="5" fill="#b9b9b9"/><text x="385" y="173" text-anchor="middle" font-size="12" font-weight="700">USB-C</text>
+          <rect x="260" y="164" width="70" height="20" rx="3" fill="#8d8d8d"/>
+          <text x="600" y="196" font-size="15" fill="#1f5b3f" font-weight="700">XIAO (윗면이 위)</text>
+          <text x="600" y="216" font-size="14" fill="#333">검은 플라스틱 위에 얹힘</text>
+          <path d="M580 211 L566 209" stroke="#333" stroke-width="1.5"/>
+          <circle cx="218" cy="180" r="10" fill="none" stroke="#c4561a" stroke-width="3"/>
+          <path d="M140 70 L210 170" stroke="#777" stroke-width="10" stroke-linecap="round"/><path d="M210 170 L214 176" stroke="#c4561a" stroke-width="6"/>
+          <text x="30" y="58" font-size="16" fill="#c4561a" font-weight="700">인두: 핀과 패드를 같이 데움</text>
+          <path d="M250 100 L224 172" stroke="#9a9a9a" stroke-width="3"/><text x="255" y="98" font-size="14" fill="#666">실납</text>
+          <text x="40" y="290" font-size="14" fill="#555">긴 핀은 브레드보드 속으로, 짧은 핀 끝은 XIAO 패드 구멍 위로 살짝 나옵니다. 그 끝을 납땜합니다.</text>
+          </g>
+        </svg>
+        <figcaption>헤더를 먼저 브레드보드에 꽂고 그 위에 XIAO 를 얹으면, 손으로 잡지 않아도 핀이 똑바로 섭니다.</figcaption>
+      </figure>
+      <ol>
+        <li><b>헤더 꽂기:</b> 7핀 헤더 두 줄을 <b>긴 핀이 아래로</b> 가게 브레드보드에 꽂습니다. 가운데 홈을 사이에 두고, 한 줄은 홈 위쪽 <b>d</b> 줄, 다른 줄은 홈 아래쪽 <b>h</b> 줄에 꽂으면 XIAO 폭과 맞습니다(두 줄 사이가 구멍 6칸). 판의 왼쪽 끝 가까이에 꽂습니다.</li>
+        <li><b>XIAO 얹기:</b> XIAO 를 <b>USB-C 가 위를 보게</b>(칩 덮개가 보이는 면이 위) 해서 헤더의 짧은 핀이 가장자리 금색 구멍(<button class="t" data-t="pad">패드</button>)에 들어가도록 얹습니다. USB-C 는 판의 바깥(왼쪽 끝)을 향하게 합니다. 그래야 케이블을 꽂기 편합니다.</li>
+        <li><b>인두 온도:</b> 전자 부품 납땜은 약 330°C (무연 납이면 350°C). 인서트 때보다 높습니다.</li>
+        <li><b>한 핀 납땜:</b> 인두 끝을 핀과 금색 패드에 <b>동시에</b> 1초 대고, 실납을 그 맞닿은 곳에 대어 녹입니다. 작은 산 모양으로 채워지면 실납을 먼저 떼고, 인두를 뗍니다. 한 핀에 3초 안쪽으로 끝냅니다.</li>
+        <li><b>순서:</b> 각 줄의 양쪽 끝 핀을 먼저 납땜해 고정합니다. XIAO 가 기울지 않았는지 본 뒤 나머지를 합니다.</li>
+        <li>14개를 다 하면 식을 때까지 1분 기다린 뒤, XIAO 를 그대로 둡니다. <b>이 자리가 이제 XIAO 의 자리입니다.</b></li>
+      </ol>
+      <figure class="fig">
+        <svg viewBox="0 0 780 200" role="img" aria-label="납땜 모양 비교. 좋은 것은 반짝이는 작은 원뿔, 나쁜 것은 동그란 공 모양 또는 옆 핀과 이어진 다리.">
+          <rect width="780" height="200" fill="#fff"/>
+          <g font-family="sans-serif" text-anchor="middle">
+          <rect x="60" y="130" width="160" height="10" fill="#1f5b3f"/><rect x="134" y="80" width="10" height="60" fill="#c9a33a"/><path d="M110 130 L139 92 L168 130 Z" fill="#cfcfcf" stroke="#999"/>
+          <text x="140" y="172" font-size="16" font-weight="700" fill="#2c6e49">좋음: 반짝이는 작은 산</text>
+          <rect x="310" y="130" width="160" height="10" fill="#1f5b3f"/><rect x="384" y="80" width="10" height="60" fill="#c9a33a"/><circle cx="389" cy="112" r="20" fill="#bdbdbd" stroke="#999"/>
+          <text x="390" y="172" font-size="16" font-weight="700" fill="#a3262f">다시: 동그란 공</text>
+          <text x="390" y="194" font-size="13" fill="#666">패드가 덜 데워짐 → 인두를 다시 대기</text>
+          <rect x="560" y="130" width="180" height="10" fill="#1f5b3f"/><rect x="600" y="80" width="10" height="60" fill="#c9a33a"/><rect x="690" y="80" width="10" height="60" fill="#c9a33a"/><path d="M590 130 Q650 100 710 130 Z" fill="#bdbdbd" stroke="#999"/>
+          <text x="650" y="172" font-size="16" font-weight="700" fill="#a3262f">다시: 옆 핀과 붙음</text>
+          <text x="650" y="194" font-size="13" fill="#666">인두로 가운데를 쓸어 떼기</text>
+          </g>
+        </svg>
+      </figure>
+      <p class="okline">14개 핀이 모두 반짝이는 작은 산 모양이고, 이웃 핀끼리 납으로 붙은 곳이 없습니다. XIAO 가 브레드보드에 꽂힌 채 흔들리지 않습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s15">
+    <label class="step-h"><input type="checkbox" data-save id="c15"><span class="num">15</span><span class="step-t">컴퓨터에 Arduino 를 준비하고 시험 코드를 올립니다<small>충전기·서보는 아직 연결하지 않습니다</small></span></label>
+    <div class="step-b">
+      <p>Arduino IDE 는 보드에 넣을 프로그램을 쓰고 <button class="t" data-t="upload">업로드</button>하는 무료 프로그램입니다. 처음 한 번만 설치·설정하면 됩니다.</p>
+      <ol>
+        <li><b>설치:</b> arduino.cc 에서 <b>Arduino IDE 2</b> 를 받아 설치합니다.</li>
+        <li><b>보드 주소 넣기:</b> 메뉴 <code>Arduino IDE → Settings…</code>(한국어 화면이면 <code>기본 설정</code>)의 <b>Additional boards manager URLs</b> 칸에 아래 주소를 붙여 넣고 OK.
+          <pre id="url">https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</pre></li>
+        <li><b>보드 꾸러미 설치:</b> 왼쪽 세로 막대의 두 번째 아이콘(보드 매니저)에서 <code>esp32</code> 를 검색해, <b>esp32 by Espressif Systems</b> 를 설치합니다. 몇 분 걸립니다.</li>
+        <li><b>라이브러리:</b> 따로 설치할 것이 없습니다. 처음엔 <code>ESP32Servo</code> 를 쓰려 했지만, 지금 버전 조합(esp32 3.3.12 + ESP32Servo 3.2.1)에서 서보 4개를 붙이면 D0·D3 의 신호가 끊겨서(2026-11-07 확인), 칩에 들어 있는 기능(LEDC)으로 서보 신호를 직접 만듭니다.</li>
+        <li><b>연결:</b> USB-C 데이터 케이블로 XIAO 와 컴퓨터를 잇습니다. 보드에 작은 불이 켜지면 전기가 들어간 것입니다.</li>
+        <li><b>보드 고르기:</b> 메뉴 <code>Tools → Board → esp32 → XIAO_ESP32S3</code>. 그리고 <code>Tools → Port</code> 에서 <code>/dev/cu.usbmodem…</code> 로 시작하는 항목을 고릅니다.</li>
+        <li><b>설정 하나 확인:</b> <code>Tools → USB CDC On Boot</code> 가 <b>Enabled</b> 인지 봅니다. 이게 켜져 있어야 컴퓨터와 글을 주고받을 수 있습니다.</li>
+        <li><b>코드 넣기:</b> 아래 <b>코드 복사</b> 를 누르고, Arduino 창의 원래 글을 모두 지운 뒤 붙여 넣습니다.</li>
+        <li><b>올리기:</b> 위쪽의 오른쪽 화살표(→, Upload) 버튼을 누릅니다. 아래에 <code>Hard resetting via RTS pin...</code> 같은 글이 나오면 끝입니다.</li>
+        <li><b>확인:</b> 오른쪽 위 돋보기 아이콘(<button class="t" data-t="serial">시리얼 모니터</button>)을 열고, 아래 칸 오른쪽의 속도를 <b>115200 baud</b> 로 맞춥니다. XIAO 의 작은 <b>R</b>(RESET) 버튼을 한 번 누르면 <code>ready</code> 가 나옵니다.</li>
+      </ol>
+      <div class="rowbtns" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn" id="copy-code">코드 복사</button><span class="muted small" id="copy-code-msg"></span></div>
+<pre id="code">// 스노우봇 책상 시험용 (제품 펌웨어 아님)
+// 보드: XIAO_ESP32S3, USB CDC On Boot: Enabled
+// 라이브러리: 없음 (ESP32 내장 LEDC 로 서보 펄스를 직접 만든다)
+// 시리얼 모니터 115200. 명령 예: p90  n120  l60  b90  c  h  t
+//
+// 2026-11-07: ESP32Servo 3.2.1 + esp32 코어 3.3.12 조합에서 서보 4개를 붙이면
+// 같은 타이머를 쓰는 짝 중 먼저 붙인 쪽(D0, D3)의 펄스가 끊겼다(자가 진단 t 로 확인).
+// 그래서 라이브러리 없이 ledcAttach 로 핀마다 50Hz 펄스를 낸다.
+
+#include "driver/gpio.h"
+
+const int PIN_PAN  = 1;  // D0  고개 좌우 (MG90S)
+const int PIN_NOD  = 2;  // D1  끄덕임 (MG90S)
+const int PIN_LID  = 4;  // D3  눈꺼풀 (작은 서보)
+const int PIN_BROW = 6;  // D5  눈썹 (작은 서보)
+const int PINS[] = {PIN_PAN, PIN_NOD, PIN_LID, PIN_BROW};
+
+const int FREQ = 50;               // 50Hz = 20ms 마다 펄스 하나
+const int RES_BITS = 14;           // 20ms 를 16384 칸으로 나눔
+const int US_MIN = 500, US_MAX = 2400;   // 0도·180도 펄스 길이(마이크로초)
+
+uint32_t dutyFor(int angle) {
+  long us = US_MIN + (long)(US_MAX - US_MIN) * angle / 180;
+  return (uint32_t)(us * (1L &lt;&lt; RES_BITS) / 20000);
+}
+
+void setAngle(int pin, int angle) {
+  if (angle &lt; 0) angle = 0;
+  if (angle &gt; 180) angle = 180;
+  ledcWrite(pin, dutyFor(angle));
+}
+
+void help() {
+  Serial.println("p=좌우 n=끄덕임 l=눈꺼풀 b=눈썹 + 각도(0~180)");
+  Serial.println("예: p60  /  c = 모두 90도  /  h = 도움말  /  t = 핀 자가 진단");
+}
+
+void selfTest() {          // 각 핀이 실제로 펄스를 내보내는지 200ms 동안 잰다 (90도면 약 7.3%)
+  for (int p : PINS) {
+    gpio_input_enable((gpio_num_t)p);
+    long hi = 0, n = 0, edges = 0; int last = gpio_get_level((gpio_num_t)p);
+    unsigned long t0 = micros();
+    while (micros() - t0 &lt; 200000) {
+      int v = gpio_get_level((gpio_num_t)p);
+      hi += v; n++; if (v != last) { edges++; last = v; }
+    }
+    Serial.printf("GPIO%d high=%.1f%% edges=%ld\n", p, 100.0 * hi / n, edges);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(800);
+  for (int p : PINS) {
+    bool ok = ledcAttach(p, FREQ, RES_BITS);
+    setAngle(p, 90);        // 켜지면 모두 가운데(90도)
+    Serial.printf("GPIO%d attach=%d\n", p, ok);
+  }
+  Serial.println("ready");
+  help();
+}
+
+void loop() {
+  if (!Serial.available()) return;
+  char which = Serial.read();
+  if (which == '\n' || which == '\r' || which == ' ') return;
+  if (which == 'h') { help(); return; }
+  if (which == 't') { selfTest(); return; }
+  if (which == 'c') {
+    for (int p : PINS) setAngle(p, 90);
+    Serial.println("all 90");
+    return;
+  }
+  int angle = Serial.parseInt();
+  if (angle &lt; 0) angle = 0;
+  if (angle &gt; 180) angle = 180;
+  if (which == 'p') setAngle(PIN_PAN, angle);
+  else if (which == 'n') setAngle(PIN_NOD, angle);
+  else if (which == 'l') setAngle(PIN_LID, angle);
+  else if (which == 'b') setAngle(PIN_BROW, angle);
+  else return;
+  Serial.print(which);
+  Serial.println(angle);
+}</pre>
+      <figure class="fig">
+        <svg viewBox="0 0 780 210" role="img" aria-label="시리얼 모니터 화면 예시. 위에 ready 와 도움말이 보이고, 아래 입력 칸에 p60 을 쳤다. 오른쪽 아래 속도는 115200 baud.">
+          <rect width="780" height="210" fill="#fff"/>
+          <rect x="20" y="16" width="740" height="180" rx="10" fill="#f7f7f7" stroke="#d0d0d0"/>
+          <rect x="20" y="16" width="740" height="34" rx="10" fill="#e9e9e9"/><text x="36" y="39" font-family="sans-serif" font-size="14" font-weight="700" fill="#333">Serial Monitor</text>
+          <rect x="36" y="58" width="600" height="30" rx="5" fill="#fff" stroke="#bbb"/><text x="48" y="78" font-family="Menlo,monospace" font-size="14" fill="#333">p60</text>
+          <text x="660" y="78" font-family="sans-serif" font-size="13" fill="#3458c8" font-weight="700">← 여기에 치고 Enter</text>
+          <g font-family="Menlo,monospace" font-size="14" fill="#222"><text x="40" y="118">ready</text><text x="40" y="138">p=좌우 n=끄덕임 l=눈꺼풀 b=눈썹 + 각도(0~180)</text><text x="40" y="158">예: p60  /  c = 모두 90도  /  h = 도움말</text><text x="40" y="178">p60</text></g>
+          <rect x="610" y="164" width="140" height="24" rx="5" fill="#fff" stroke="#bbb"/><text x="680" y="181" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">115200 baud ▾</text>
+        </svg>
+        <figcaption>시리얼 모니터는 컴퓨터와 XIAO 가 글로 대화하는 창입니다. 위 칸에 명령을 치면 XIAO 가 받은 명령을 아래에 다시 보여 줍니다.</figcaption>
+      </figure>
+      <details class="stuck"><summary>업로드가 실패해요 / Port 에 아무것도 안 보여요</summary>
+        <ul>
+          <li>케이블이 충전 전용일 수 있습니다. 다른 USB-C 케이블로 바꿔 봅니다.</li>
+          <li><b>BOOT 모드로 올리기:</b> USB 를 뺍니다. XIAO 의 작은 <b>B</b>(BOOT) 버튼을 누른 채로 USB 를 꽂고, 꽂은 뒤 버튼을 뗍니다. Port 를 다시 고르고 업로드합니다. 끝나면 <b>R</b> 버튼을 한 번 누릅니다.</li>
+          <li>화면이 깨져 보이면(물음표 글자) 시리얼 모니터 속도가 115200 이 아닌 것입니다.</li>
+        </ul>
+      </details>
+      <p class="okline">시리얼 모니터에 <code>ready</code> 와 도움말 두 줄이 보입니다. <b>USB 는 꽂은 채로 둡니다.</b></p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s16">
+    <label class="step-h"><input type="checkbox" data-save id="c16"><span class="num">16</span><span class="step-t">충전기 전기를 브레드보드 레일로 보냅니다<small>빨간 USB-C 기판 + 콘덴서</small></span></label>
+    <div class="step-b">
+      <figure class="fig">
+        <svg viewBox="0 0 780 300" role="img" aria-label="콘덴서 방향. 긴 다리는 + 빨간 레일, 몸통에 흰 띠와 마이너스 표시가 있는 쪽 짧은 다리는 − 파란 레일.">
+          <rect width="780" height="300" fill="#fff"/>
+          <g font-family="sans-serif">
+          <rect x="300" y="40" width="110" height="150" rx="14" fill="#2b3a8f"/><rect x="300" y="40" width="30" height="150" fill="#d8d8e8"/>
+          <g fill="#2b3a8f" font-size="22" font-weight="700"><text x="307" y="90">−</text><text x="307" y="125">−</text><text x="307" y="160">−</text></g>
+          <text x="372" y="120" fill="#fff" font-size="18" text-anchor="middle" font-weight="700">1000µF</text>
+          <line x1="330" y1="190" x2="330" y2="262" stroke="#999" stroke-width="5"/>
+          <line x1="385" y1="190" x2="385" y2="236" stroke="#999" stroke-width="5"/>
+          <line x1="80" y1="240" x2="700" y2="240" stroke="#d33a32" stroke-width="4"/>
+          <line x1="80" y1="266" x2="700" y2="266" stroke="#2f64d6" stroke-width="4"/>
+          <text x="710" y="246" font-size="15" fill="#d33a32" font-weight="700">+</text><text x="710" y="272" font-size="15" fill="#2f64d6" font-weight="700">−</text>
+          <text x="440" y="70" font-size="16" fill="#333" font-weight="700">흰 띠 + "−" 표시 쪽</text>
+          <text x="440" y="92" font-size="15" fill="#555">→ 이 다리 → 파란 레일(−)</text>
+          <text x="440" y="140" font-size="16" fill="#333" font-weight="700">반대쪽 다리</text>
+          <text x="440" y="162" font-size="15" fill="#555">→ 빨간 레일(+)</text>
+          <text x="40" y="40" font-size="16" fill="#a3262f" font-weight="700">거꾸로 꽂지 않기</text>
+          <text x="40" y="62" font-size="14" fill="#555">레일 순서는 판마다</text>
+          <text x="40" y="80" font-size="14" fill="#555">다를 수 있어 색을 봅니다</text>
+          </g>
+        </svg>
+        <figcaption><button class="t" data-t="capacitor">콘덴서</button>는 전기를 잠깐 담아 두는 작은 통입니다. 서보가 갑자기 전기를 많이 끌 때 모자란 만큼 채워 줘서, 전압이 출렁여 서보가 떨거나 XIAO 가 꺼지는 것을 막습니다.</figcaption>
+      </figure>
+      <ol>
+        <li>충전기는 아직 꽂지 않습니다.</li>
+        <li><b>빨간 USB-C 기판</b>을 브레드보드 왼쪽 위 끝, 레일 가까운 빈 곳에 꽂습니다. USB-C 구멍이 판 바깥을 향하게 합니다.</li>
+        <li>점퍼선 하나로 기판의 <code>VBUS</code>(또는 <code>5V</code>) 핀과 같은 세로 줄 구멍 → <b>빨간(+) 레일</b>을 잇습니다. 빨간 점퍼를 쓰면 헷갈리지 않습니다.</li>
+        <li>다른 점퍼로 기판의 <code>GND</code> 핀 줄 → <b>파란(−) 레일</b>을 잇습니다. 검은 점퍼를 씁니다.</li>
+        <li>콘덴서 다리를 그림대로 레일에 꽂습니다. <b>흰 띠 쪽 짧은 다리 = 파란 레일</b>, 긴 다리 = 빨간 레일.</li>
+        <li>충전기를 빨간 기판의 USB-C 에 꽂습니다. 10초 동안 냄새·연기·뜨거운 곳이 없는지 손등을 가까이 대 봅니다.</li>
+        <li>멀티미터가 있으면 빨간 레일과 파란 레일 사이가 <b>4.8~5.2V</b> 인지 잽니다.</li>
+        <li>확인했으면 <b>충전기를 다시 뽑습니다.</b> 다음 단계에서 선을 꽂아야 하기 때문입니다.</li>
+      </ol>
+      <label class="f" style="max-width:260px">레일 전압 (있으면)<input type="number" step="0.01" data-save id="m-volt" data-label="레일 전압" inputmode="decimal" placeholder="5.05"></label>
+      <details class="stuck"><summary>멀티미터 쓰는 법</summary><p>다이얼을 <b>V⎓</b>(직류 전압, 20V 범위가 있으면 20)에 둡니다. 빨간 탐침을 빨간 레일 구멍에, 검은 탐침을 파란 레일 구멍에 살짝 넣습니다. 화면 숫자가 5 근처면 정상입니다. 앞에 − 가 붙으면 탐침을 바꿔 댄 것이니 걱정하지 않아도 됩니다.</p></details>
+      <p class="okline">충전기를 꽂았을 때 이상이 없었고, 지금은 뽑혀 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s17">
+    <label class="step-h"><input type="checkbox" data-save id="c17"><span class="num">17</span><span class="step-t">XIAO 의 GND 를 파란 레일에 잇습니다<small>점퍼선 1개</small></span></label>
+    <div class="step-b">
+      <p>XIAO 의 <code>GND</code> 핀은 USB-C 쪽에서 두 번째 핀입니다(위 핀 지도 참고). 그 핀과 같은 세로 줄의 빈 구멍에 검은 점퍼를 꽂고, 반대쪽 끝을 <b>파란(−) 레일</b>에 꽂습니다.</p>
+      <div class="why">서보는 신호선의 전압이 "높다·낮다" 바뀌는 박자를 보고 각도를 정합니다. "높다"는 GND 를 기준으로 잰 값이라, XIAO 와 서보가 같은 GND 를 써야 같은 신호로 읽힙니다. 이 선이 빠지면 서보가 가만히 있거나 혼자 떨립니다.</div>
+      <p class="never">XIAO 의 5V 핀(USB-C 쪽 첫 번째 핀)에는 아무것도 꽂지 않습니다.</p>
+      <p class="okline">XIAO GND → 파란 레일 점퍼 하나가 꽂혀 있고, XIAO 5V 핀 줄은 비어 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s18">
+    <label class="step-h"><input type="checkbox" data-save id="c18"><span class="num">18</span><span class="step-t">MG90S 하나를 연결해 돌려 봅니다<small>신호는 D0</small></span></label>
+    <div class="step-b">
+      <figure class="fig">
+        <svg viewBox="0 0 780 420" role="img" aria-label="전체 배선도. 왼쪽 위 빨간 USB-C 기판에서 빨간 레일과 파란 레일로 선이 간다. 콘덴서가 두 레일 사이에 있다. XIAO 는 가운데 홈을 걸쳐 꽂혀 있고 USB-C 는 왼쪽 컴퓨터로 간다. XIAO GND 에서 파란 레일로 검은 선. 서보의 갈색 선은 파란 레일, 빨강 선은 빨간 레일, 주황 선은 XIAO D0 줄로 간다.">
+          <rect width="780" height="420" fill="#fff"/>
+          <g font-family="sans-serif">
+          <rect x="120" y="70" width="620" height="300" rx="10" fill="#f3f1ea" stroke="#cfcac0"/>
+          <line x1="135" y1="88" x2="725" y2="88" stroke="#d33a32" stroke-width="3"/><text x="728" y="93" font-size="15" fill="#d33a32" font-weight="700">+</text>
+          <line x1="135" y1="108" x2="725" y2="108" stroke="#2f64d6" stroke-width="3"/><text x="728" y="113" font-size="15" fill="#2f64d6" font-weight="700">−</text>
+          <rect x="135" y="232" width="590" height="12" fill="#ddd8cc"/>
+          <!-- 전원 기판 -->
+          <rect x="140" y="140" width="64" height="44" rx="4" fill="#c53030"/><rect x="128" y="150" width="16" height="24" rx="3" fill="#bbb"/>
+          <text x="172" y="200" font-size="12" text-anchor="middle" fill="#8a2020" font-weight="700">USB-C 기판</text>
+          <circle cx="160" cy="160" r="4" fill="#ffd"/><circle cx="188" cy="160" r="4" fill="#ffd"/>
+          <text x="160" y="152" font-size="10" text-anchor="middle" fill="#fff">5V</text><text x="188" y="152" font-size="10" text-anchor="middle" fill="#fff">G</text>
+          <path d="M160 160 L160 88" stroke="#d33a32" stroke-width="5"/><path d="M188 160 L196 108" stroke="#222" stroke-width="5"/>
+          <!-- 충전기 -->
+          <rect x="20" y="140" width="70" height="44" rx="8" fill="#fbe8da" stroke="#c4561a"/><text x="55" y="167" font-size="14" text-anchor="middle" fill="#8a3a10" font-weight="700">충전기</text>
+          <line x1="90" y1="162" x2="128" y2="162" stroke="#555" stroke-width="5"/>
+          <!-- 콘덴서 -->
+          <rect x="234" y="40" width="26" height="36" rx="5" fill="#2b3a8f"/><rect x="234" y="40" width="8" height="36" fill="#d8d8e8"/>
+          <line x1="238" y1="76" x2="238" y2="108" stroke="#999" stroke-width="3"/><line x1="256" y1="76" x2="256" y2="88" stroke="#999" stroke-width="3"/>
+          <text x="247" y="32" font-size="12" text-anchor="middle" fill="#2b3a8f" font-weight="700">콘덴서</text>
+          <!-- XIAO -->
+          <rect x="330" y="170" width="150" height="136" rx="10" fill="#2e2e2e"/>
+          <rect x="300" y="222" width="36" height="32" rx="5" fill="#b9b9b9"/>
+          <text x="405" y="245" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">XIAO</text>
+          <g font-size="10" text-anchor="middle" fill="#fff">
+            <text x="346" y="190">5V</text><text x="366" y="190">GND</text><text x="386" y="190">3V3</text><text x="406" y="190">D10</text><text x="426" y="190">D9</text><text x="446" y="190">D8</text><text x="466" y="190">D7</text>
+            <text x="346" y="296">D0</text><text x="366" y="296">D1</text><text x="386" y="296">D2</text><text x="406" y="296">D3</text><text x="426" y="296">D4</text><text x="446" y="296">D5</text><text x="466" y="296">D6</text>
+          </g>
+          <g fill="#c9a33a"><circle cx="346" cy="176" r="3.5"/><circle cx="366" cy="176" r="3.5"/><circle cx="346" cy="300" r="3.5"/></g>
+          <!-- USB → 컴퓨터 -->
+          <path d="M300 238 C260 238 250 330 200 360 L120 392" stroke="#3458c8" stroke-width="5" fill="none"/>
+          <rect x="20" y="372" width="100" height="40" rx="8" fill="#e9eef8" stroke="#3458c8"/><text x="70" y="397" font-size="14" text-anchor="middle" fill="#24408f" font-weight="700">컴퓨터</text>
+          <!-- GND 점퍼 -->
+          <path d="M366 160 L366 108" stroke="#222" stroke-width="5"/><circle cx="366" cy="160" r="4" fill="#222"/>
+          <text x="374" y="140" font-size="12" fill="#222" font-weight="700">GND 점퍼</text>
+          <text x="340" y="150" font-size="12" fill="#a3262f" font-weight="700" text-anchor="end">XIAO 5V 핀: 비움 ✕</text><path d="M342 147 L346 170" stroke="#a3262f" stroke-width="1.5"/>
+          <!-- 서보 -->
+          <rect x="600" y="300" width="100" height="56" rx="6" fill="#2b4fa8"/><text x="650" y="333" font-size="14" text-anchor="middle" fill="#fff" font-weight="700">MG90S</text>
+          <path d="M600 318 C560 318 560 108 560 108" stroke="#7a4a1a" stroke-width="5" fill="none"/>
+          <path d="M600 328 C580 328 580 88 580 88" stroke="#d33a32" stroke-width="5" fill="none"/>
+          <path d="M600 340 C520 340 400 340 346 318" stroke="#e08a1e" stroke-width="5" fill="none"/><circle cx="346" cy="318" r="4" fill="#e08a1e"/>
+          <text x="540" y="200" font-size="12" fill="#7a4a1a" font-weight="700" text-anchor="end">갈색 → −</text>
+          <text x="588" y="200" font-size="12" fill="#d33a32" font-weight="700">빨강 → +</text>
+          <text x="470" y="360" font-size="12" fill="#b26a0e" font-weight="700">주황 → D0 줄</text>
+          </g>
+        </svg>
+        <figcaption>오늘의 전체 배선. 선은 모두 점퍼선(수-수)입니다. 서보 커넥터의 세 구멍에 점퍼선을 하나씩 꽂으면 브레드보드에 꽂을 수 있습니다.</figcaption>
+      </figure>
+      <ol>
+        <li>충전기는 뽑혀 있고, XIAO 의 USB 는 컴퓨터에 꽂혀 있습니다.</li>
+        <li>MG90S 하나에 혼을 끼웁니다(나사는 조이지 않아도 됩니다). 혼이 있어야 도는 게 잘 보입니다.</li>
+        <li>서보 선 끝의 검은 커넥터 세 구멍에 수-수 점퍼선을 하나씩 꽂습니다.</li>
+        <li><b>갈색</b> 선 → 파란(−) 레일, <b>빨강</b> 선 → 빨간(+) 레일, <b>주황</b> 선 → XIAO <b>D0</b> 핀과 같은 세로 줄의 빈 구멍.</li>
+        <li>충전기를 꽂습니다. 서보가 "윙" 하고 가운데(90도)로 갑니다. 이미 가운데였으면 움직이지 않을 수도 있습니다.</li>
+        <li>시리얼 모니터에 <code>p60</code> 을 치고 Enter → 혼이 한쪽으로 돕니다. <code>p120</code> → 반대쪽. <code>p90</code> → 가운데.</li>
+      </ol>
+      <div class="cmds">
+        <div><code>p90</code><br>고개 좌우 서보를 90도로</div>
+        <div><code>p60</code> / <code>p120</code><br>좌우로 30도씩</div>
+        <div><code>c</code><br>네 서보 모두 90도</div>
+        <div><code>h</code><br>명령 목록 보기</div>
+      </div>
+      <p class="muted small">처음에는 30~150 사이 각도만 씁니다. 싼 서보는 0이나 180 끝에서 "끼익" 하고 버티며 열이 날 수 있습니다.</p>
+      <details class="stuck"><summary>안 움직여요 / 떨어요</summary>
+        <ul>
+          <li>시리얼 모니터에 <code>p60</code> 이 다시 찍히는지 봅니다. 안 찍히면 명령이 XIAO 에 안 간 것입니다(속도 115200, Port 확인).</li>
+          <li>찍히는데 안 움직이면: 충전기가 꽂혀 있는지, 17번의 GND 점퍼가 있는지, 주황 선이 D0 과 <b>같은 세로 줄(홈의 같은 쪽)</b>에 있는지 봅니다.</li>
+          <li>계속 떨리면 그 서보는 "여분" 테이프를 붙이고 다른 MG90S 로 바꿔 봅니다. 서보를 분해하지 않습니다.</li>
+        </ul>
+      </details>
+      <p class="okline"><code>p60</code>, <code>p120</code>, <code>p90</code> 대로 혼이 움직입니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s19">
+    <label class="step-h"><input type="checkbox" data-save id="c19"><span class="num">19</span><span class="step-t">나머지 서보도 한 개씩 시험하고 역할 이름을 붙입니다</span></label>
+    <div class="step-b">
+      <p>선을 바꿀 때마다 <b>충전기를 먼저 뽑습니다.</b> 갈색·빨강은 언제나 레일, 주황만 아래 표의 핀으로 옮깁니다.</p>
+      <table>
+        <thead><tr><th>시험할 서보</th><th>주황 선 자리</th><th>명령</th></tr></thead>
+        <tbody>
+          <tr><td>두 번째 MG90S (끄덕임 후보)</td><td>D1</td><td><code>n60</code> <code>n120</code> <code>n90</code></td></tr>
+          <tr><td>작은 서보 (눈꺼풀 후보)</td><td>D3</td><td><code>l60</code> <code>l120</code> <code>l90</code></td></tr>
+          <tr><td>작은 서보 (눈썹 후보)</td><td>D5</td><td><code>b60</code> <code>b120</code> <code>b90</code></td></tr>
+          <tr><td>여분 MG90S 2개, 여분 작은 서보 1개</td><td>같은 방법</td><td>상태만 확인</td></tr>
+        </tbody>
+      </table>
+      <p>잘 돌고 소리가 작은 것을 골라 테이프에 역할을 적어 붙입니다: <b>좌우</b>, <b>끄덕임</b>, <b>눈꺼풀</b>, <b>눈썹</b>, 나머지는 <b>여분</b>.</p>
+      <p>마지막으로 네 개를 각자 자리에 모두 꽂고 <code>c</code> 를 보내 모두 90도로 둡니다. <b>기구에 연결하기 전에는 언제나 90도로 맞춘 상태에서 혼을 끼웁니다.</b> 그래야 양쪽으로 움직일 여유가 같습니다.</p>
+      <div class="grid">
+        <label class="f">MG90S 정상 개수<input type="number" min="0" max="4" data-save id="m-mg-ok" data-label="MG90S 정상" inputmode="numeric"></label>
+        <label class="f">작은 서보 정상 개수<input type="number" min="0" max="3" data-save id="m-sg-ok" data-label="작은 서보 정상" inputmode="numeric"></label>
+      </div>
+      <label class="f">서보 메모 (소리, 떨림 등)<textarea data-save id="m-servo-note" data-label="서보 메모" placeholder="예: MG90S 3번이 조금 시끄러움"></textarea></label>
+      <p class="okline">MG90S 2개 이상, 작은 서보 2개 이상이 명령대로 움직이고, 역할 테이프가 붙어 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s20">
+    <label class="step-h"><input type="checkbox" data-save id="c20"><span class="num">20</span><span class="step-t">컴퓨터 없이 충전기 하나로 켜 봅니다<span class="opt">선택</span><small>다이오드 사용</small></span></label>
+    <div class="step-b">
+      <p>완성된 스노우봇은 컴퓨터 없이 충전기 하나로 켜집니다. 그때 XIAO 는 충전기 전기를 <b>다이오드를 거쳐</b> 5V 핀으로 받습니다. 이 단계는 그것을 미리 해 보는 것입니다. 건너뛰어도 됩니다.</p>
+      <figure class="fig">
+        <svg viewBox="0 0 780 200" role="img" aria-label="다이오드 꽂는 방향. 띠 없는 쪽 다리는 빨간 레일, 띠 쪽 다리는 XIAO 5V 핀 줄.">
+          <rect width="780" height="200" fill="#fff"/>
+          <g font-family="sans-serif">
+          <line x1="40" y1="60" x2="740" y2="60" stroke="#d33a32" stroke-width="4"/><text x="40" y="45" font-size="15" fill="#d33a32" font-weight="700">빨간(+) 레일</text>
+          <line x1="300" y1="60" x2="300" y2="95" stroke="#999" stroke-width="4"/>
+          <rect x="285" y="95" width="30" height="60" rx="6" fill="#1f1f1f"/><rect x="285" y="140" width="30" height="10" fill="#c9c9c9"/>
+          <line x1="300" y1="155" x2="300" y2="180" stroke="#999" stroke-width="4"/>
+          <rect x="250" y="178" width="100" height="18" rx="4" fill="#2e2e2e"/><text x="300" y="192" font-size="12" fill="#fff" text-anchor="middle" font-weight="700">XIAO 5V 핀 줄</text>
+          <text x="340" y="115" font-size="15" fill="#333">띠 없는 쪽 → 빨간 레일</text>
+          <text x="340" y="150" font-size="15" fill="#333" font-weight="700">은색 띠 쪽 → XIAO 5V</text>
+          <text x="560" y="120" font-size="14" fill="#a3262f" font-weight="700">이 상태에서는</text>
+          <text x="560" y="140" font-size="14" fill="#a3262f" font-weight="700">컴퓨터 USB 를 꽂지 않음</text>
+          </g>
+        </svg>
+        <figcaption>Seeed 공식 안내: 바깥 전원을 5V 핀에 넣을 때는 다이오드를 넣고, 띠 쪽(캐소드)을 5V 핀으로 둔다.</figcaption>
+      </figure>
+      <ol>
+        <li>충전기를 뽑고, <b>XIAO 의 USB 도 컴퓨터에서 뽑습니다.</b></li>
+        <li>3번에서 고른 1N5817 하나를 그림처럼 꽂습니다. 띠 없는 다리 = 빨간 레일, 은색 띠 다리 = XIAO 5V 핀과 같은 세로 줄.</li>
+        <li>충전기를 꽂습니다. XIAO 의 불이 켜지고, 서보 네 개가 90도로 갑니다(코드가 켜지자마자 90도로 보내기 때문).</li>
+        <li>확인했으면 충전기를 뽑고 <b>다이오드를 뺍니다.</b> 다시 컴퓨터로 작업할 때는 다이오드가 빠져 있어야 합니다.</li>
+      </ol>
+      <div class="why">다이오드를 꽂은 상태에서 컴퓨터 USB 까지 꽂으면, 충전기 5V 와 컴퓨터 5V 가 XIAO 안에서 만납니다. 둘의 전압이 조금만 달라도 한쪽 전기가 다른 쪽으로 거꾸로 들어갈 수 있습니다. 그래서 "다이오드를 꽂았으면 컴퓨터는 빼고, 컴퓨터를 꽂았으면 다이오드는 뺀다"로 정합니다.</div>
+      <p class="okline">충전기 하나로 XIAO 와 서보가 같이 켜졌고, 지금 다이오드는 빠져 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s21">
+    <label class="step-h"><input type="checkbox" data-save id="c21"><span class="num">21</span><span class="step-t">앰프는 글자만 사진으로 남깁니다<small>소리 시험은 다음에</small></span></label>
+    <div class="step-b">
+      <p>13번 보라 기판(앰프)을 꺼내 하얀 글자 <code>VIN</code> <code>GND</code> <code>BCLK</code> <code>LRC</code> <code>DIN</code> 과 스피커 단자(＋ −) 쪽을 휴대폰으로 찍어 저에게 보내 주세요. 소리 코드를 그 글자 순서에 맞춰 준비합니다.</p>
+      <p class="never">스피커 선을 XIAO 핀에 직접 대지 않습니다. 스피커는 언제나 앰프에만 연결합니다.</p>
+      <div class="box"><h3>받은 앰프 확인 (2026-11-07)</h3><ul><li><b>앞면 핀 순서 (왼쪽부터):</b> LRC · BCLK · DIN · GAIN · SD · GND · Vin — 원본(Adafruit)과 같은 순서입니다.</li><li><b>스피커 단자:</b> 칩 위쪽 작은 구멍 두 개. 앞면에서 보아 왼쪽 −, 오른쪽 +.</li><li><b>뒷면:</b> MAX98357A I2S Mono Amp, 전원 2.5–5.5V, 4–8Ω 3W, 기본 9dB, (L+R)/2 출력. 스피커(8Ω 2W)와 맞습니다.</li><li><b>연결 계획:</b> BCLK → D4 · LRC → D6 · DIN → D7 · Vin → 빨간(+) 레일 · GND → 파란(−) 레일. GAIN·SD 는 비워 둡니다(기본 9dB, 두 채널 섞기).</li></ul></div>
+      <p class="okline">앰프 사진이 있고, 앰프와 스피커는 다시 봉지에 들어가 있습니다.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ───────── 5 끼워 보기 ───────── -->
+<section id="p5">
+  <div class="part-h"><div class="eyebrow">5 · 끼워 보기</div><h2>붙이지 않고, 맞는지만 봅니다</h2><p>접착제·에폭시는 아직 쓰지 않습니다. 맞지 않는 곳을 찾는 것이 목적입니다.</p></div>
+
+  <figure class="fig">
+    <img src="cad-stage1-eye.jpg" alt="눈 기구 설계 그림. 위는 정면에서 눈을 뜬 모습과 감은 모습, 아래는 옆 단면으로 크랭크와 막대, 서보 위치.">
+    <figcaption>눈 설계. 작은 서보 하나가 두 눈꺼풀을, 다른 하나가 두 눈썹을 움직입니다. 오른쪽 눈 검은자 가운데에 카메라가 들어갑니다. 아래 줄 그림의 주황 부품이 <button class="t" data-t="crank">크랭크</button>, 노란 선이 황동봉·피아노선입니다.</figcaption>
+  </figure>
+
+  <article class="step" data-step id="s22">
+    <label class="step-h"><input type="checkbox" data-save id="c22"><span class="num">22</span><span class="step-t">눈 부품의 지지대를 떼고 끼워 봅니다</span></label>
+    <div class="step-b">
+      <ol>
+        <li>사진 3·4·7·8번 부품에 붙은 가는 <button class="t" data-t="support">지지대</button>를 니퍼로 하나씩 끊습니다. 지지대는 부품을 받치려고 같이 출력된 기둥이라 버립니다.</li>
+        <li>눈꺼풀(8번)은 두께가 1mm 라 약합니다. 지지대 <b>발 부분만</b> 자르고, 껍데기를 휘지 않습니다.</li>
+        <li>흰자 돔(7번), 검은자(3번), 눈꺼풀(8번)을 얼굴(1번)의 눈 테에 손으로 얹어 보기만 합니다.</li>
+        <li>10번에서 작은 서보가 창에 들어갔다면, 머리 안 틀(2번)의 눈꺼풀·눈썹 서보 자리에 서보를 올려 봅니다. 안 들어가면 깎지 않고 메모에 적습니다.</li>
+      </ol>
+      <label class="f">끼워 본 메모<textarea data-save id="m-fit-note" data-label="가조립 메모" placeholder="예: 왼쪽 눈꺼풀이 눈 테에 걸림, 검은자 헐거움"></textarea></label>
+      <p class="okline">어느 부품이 걸리는지(또는 다 맞는지) 메모에 한 줄 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s23">
+    <label class="step-h"><input type="checkbox" data-save id="c23"><span class="num">23</span><span class="step-t">황동봉 길이를 표시합니다</span></label>
+    <div class="step-b">
+      <ol>
+        <li>황동봉을 두 눈 테의 축 구멍에 걸쳐 봅니다. 양 끝이 바깥쪽 눈 테 벽 속에 숨는 자리에 펜으로 금을 긋습니다. 설계상 약 70mm 입니다.</li>
+        <li>금이 그어졌으면 그때 잘라도 됩니다(니퍼나 쇠톱). 자른 봉은 구멍에 넣었다 빼 보기만 합니다.</li>
+        <li>피아노선은 서보 혼과 눈꺼풀 크랭크를 잇는 짧은 막대입니다(설계 약 20mm). 실제 길이는 두 구멍을 대 보고 정하니 오늘은 자르지 않습니다.</li>
+      </ol>
+      <label class="f" style="max-width:260px">황동봉 표시 길이 (mm)<input type="number" step="0.5" data-save id="m-rod-len" data-label="황동봉 길이" inputmode="decimal"></label>
+      <p class="okline">봉에 금이 있거나, 다음에 긋는다고 메모에 있습니다.</p>
+    </div>
+  </article>
+
+  <figure class="fig">
+    <img src="cad-stage2-neck.jpg" alt="목 관절 설계 그림. 베어링, 요크, 좌우 서보, 끄덕임 서보의 위치.">
+    <figcaption>목 설계. 몸통 속 MG90S 가 좌우를 돌리고, 베어링이 머리 무게를 받습니다. 끄덕임 MG90S 는 머리 안에 눕고, <button class="t" data-t="yoke">요크</button>(ㄷ자 부품)를 돌려 고개를 숙입니다. 움직이는 범위는 좌우 ±90°, 끄덕임 ±25° 입니다.</figcaption>
+  </figure>
+
+  <article class="step" data-step id="s24">
+    <label class="step-h"><input type="checkbox" data-save id="c24"><span class="num">24</span><span class="step-t">목은 조건이 맞을 때만 베어링을 넣습니다</span></label>
+    <div class="step-b">
+      <ol>
+        <li>요크(5번) 아래 둥근 기둥의 지지대를 떼고, 베어링 안 구멍에 들어가는지만 봅니다.</li>
+        <li><b>11번에서 고른 자리가 19.1 이고, 6번에서 잰 베어링이 10 × 19 × 5 일 때만</b> 목 받침판(6번)의 구멍에 베어링을 엄지로 눌러 넣습니다.</li>
+        <li>그 밖의 경우에는 넣지 않습니다. 한 번 넣으면 빼다가 받침판이 상할 수 있기 때문입니다.</li>
+        <li>좌우 서보 혼은 아직 나사로 잠그지 않습니다.</li>
+      </ol>
+      <label class="f" style="max-width:300px">베어링<select data-save id="m-neck" data-label="목 베어링"><option value="">아직</option><option>받침판에 넣었다</option><option>조건이 안 맞아 안 넣었다</option></select></label>
+      <p class="okline">위 칸이 채워져 있습니다.</p>
+    </div>
+  </article>
+
+  <article class="step" data-step id="s25">
+    <label class="step-h"><input type="checkbox" data-save id="c25"><span class="num">25</span><span class="step-t">정리하고, 기록을 보내 줍니다</span></label>
+    <div class="step-b">
+      <ol>
+        <li>충전기와 USB 를 뽑고 인두를 끕니다.</li>
+        <li>아래 <b>기록</b> 구역의 <b>기록 복사</b> 를 눌러 채팅에 붙여 넣어 주세요. 앰프 사진도 같이 보내 주세요.</li>
+        <li>저는 그 숫자로 설계(구멍 지름·서보 창·베어링 자리)를 고쳐 2차 출력 파일을 다시 만듭니다.</li>
+      </ol>
+      <p class="okline">책상 위에 전원이 꽂혀 있지 않고, 인두가 꺼져 있습니다.</p>
+    </div>
+  </article>
+</section>
+
+<!-- ───────── 나중 ───────── -->
+<section id="p6">
+  <div class="part-h"><div class="eyebrow">나중 · 2차 출력이 온 뒤</div><h2>몸통과 머리 뒤 덮개가 오면 이렇게 닫습니다</h2><p>오늘 체크에는 넣지 않았습니다. 순서를 미리 보여 드리려고 적었습니다. 2차 출력 전에 철물점에서 M24 평와셔 2장, 에폭시, 바닥 미끄럼 패드, 3mm 핀(또는 M3 나사)을 삽니다.</p></div>
+  <div class="two">
+    <figure class="fig"><img src="cad-stage4-body.jpg" alt="몸통 설계 그림. 스피커 그릴, USB-C, 목 받침판, 좌우 서보 위치."><figcaption>몸통은 한 덩어리입니다. 위 구멍으로 좌우 서보와 스피커를 넣습니다.</figcaption></figure>
+    <figure class="fig"><img src="cad-stage3-head.jpg" alt="머리 설계 그림. 앞 껍데기, 뒤 덮개, 머리 안 틀."><figcaption>머리 안 틀에 서보 셋, XIAO, 앰프를 붙이고 얼굴에 넣은 뒤 뒤 덮개를 닫습니다.</figcaption></figure>
+  </div>
+  <ol>
+    <li>오늘 고른 숫자로 2차 출력 파일을 고친 뒤 주문합니다.</li>
+    <li>몸통 안 바닥에 M24 와셔 2장을 에폭시로 붙입니다(넘어지지 않게 하는 무게추). 바닥판과 미끄럼 패드를 닫습니다.</li>
+    <li>빨간 USB-C 기판을 몸통 뒤쪽 선반에 두고, 5V 와 GND 를 위로 올립니다.</li>
+    <li>"좌우" MG90S 를 몸통에 세웁니다. 90도를 명령한 뒤 혼을 요크 아래 허브에 나사로 고정합니다.</li>
+    <li>스피커를 몸통 앞 그릴 뒤에 두고 누름 고리와 나사 4개로 누릅니다.</li>
+    <li>목을 지나는 선은 다섯 가닥입니다: 5V, GND, 좌우 서보 신호, 스피커 +, 스피커 −. 납땜한 곳은 수축튜브로 감싸고, 고개를 90도 돌려도 당기지 않게 고리를 한 번 둡니다.</li>
+    <li>머리 안 틀에 끄덕임·눈꺼풀·눈썹 서보, XIAO(Sense 보드·카메라·방열판·안테나 포함), 앰프를 고정하고 배선합니다. 이때 다이오드와 콘덴서가 들어갑니다.</li>
+    <li>흰자, 눈꺼풀, 황동봉, 크랭크를 얼굴에 넣고 틀을 기둥 3곳에 고정합니다. 피아노선으로 크랭크와 눈꺼풀 서보 혼을 잇습니다. 여기서는 에폭시를 써도 됩니다.</li>
+    <li>끄덕임 혼을 요크 한쪽에 고정하고 반대쪽에 3mm 핀을 끼웁니다. 뒤 덮개를 M2 나사 6개로 닫습니다.</li>
+    <li>처음 켤 때는 서보 넷 모두 90도인지 확인하고, 좌우·끄덕임을 가운데 근처에서만 조금씩 움직여 봅니다.</li>
+  </ol>
+</section>
+
+<!-- ───────── 기록 ───────── -->
+<section id="rec">
+  <div class="part-h"><div class="eyebrow">기록</div><h2>적은 값 한눈에 보기</h2><p>이 페이지에 적은 값은 이 브라우저에만 저장됩니다. 다른 기기로 옮기거나 저에게 보낼 때는 복사해 주세요.</p></div>
+  <div class="box">
+    <label class="f">그 밖의 메모<textarea data-save id="m-note" data-label="메모" placeholder="막힌 곳, 궁금한 것, 이해 안 되는 문장"></textarea></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button type="button" class="btn" id="copy-rec">기록 복사</button>
+      <button type="button" class="btn ghost" id="reset">체크만 지우기</button>
+      <span class="muted small" id="copy-rec-msg" style="align-self:center"></span>
+    </div>
+    <pre id="rec-view" style="white-space:pre-wrap;background:var(--soft);color:var(--ink);border:1px solid var(--line)"></pre>
+  </div>
+</section>
+
+<!-- ───────── 단어 ───────── -->
+<section id="words">
+  <div class="part-h"><div class="eyebrow">단어 모음</div><h2>이 페이지에 나오는 말</h2><p>본문의 점선 밑줄 단어와 같은 설명입니다.</p></div>
+  <div class="gloss" id="gloss"></div>
+</section>
+
+<footer>
+  <p>근거: 부품 목록 <code>docs/03-parts-list.md</code>, 기구 설계 <code>docs/05-cad-stages.md</code>, 공차 판 <code>docs/06-print-order.md</code>. 핀 번호·다이오드 방향·Sense 보드 떼는 법·안테나·방열판은 Seeed XIAO ESP32S3 공식 위키(2026-11-07 확인)를 따랐습니다. 직접 잰 값이 문서 값과 다르면 잰 값을 따릅니다.</p>
+</footer>
+</div>
+
+<div id="pop" role="tooltip"></div>
+
+<script>
+(function(){
+  var GLOSS = {
+    breadboard:["브레드보드","납땜 없이 부품 다리를 꽂아 연결하는 구멍판. 판 속 금속 띠가 정해진 구멍끼리 이어 줍니다."],
+    rail:["레일","브레드보드 위·아래 가장자리의 긴 줄. 빨간 줄(+)과 파란 줄(−)이 있고, 줄 안의 구멍은 가로로 모두 이어져 있습니다."],
+    gnd:["GND (그라운드)","전기의 0V 기준선이자 전기가 돌아가는 길. 신호를 주고받는 기기끼리는 GND 를 이어야 같은 기준으로 신호를 읽습니다."],
+    servo:["서보","명령한 각도(0~180도)로 축을 돌려 그 자리에 멈춰 있는 작은 모터."],
+    horn:["혼","서보 축에 끼우는 플라스틱 팔. 여기에 막대를 걸어 다른 부품을 움직입니다."],
+    header:["핀 헤더","기판 구멍에 납땜하는 금속 핀 줄. 바늘이 튀어나온 것이 수, 구멍만 있는 것이 암입니다."],
+    pad:["패드","기판 가장자리의 금색 구멍. 여기에 핀을 넣고 납땜합니다."],
+    coupon:["공차 판","같은 구멍을 크기만 조금씩 다르게 여러 개 뚫은 시험 판. 실제 부품을 끼워 보고 꼭 맞는 숫자를 고릅니다."],
+    insert:["열압입 인서트","금색 작은 나사통. 뜨거운 인두로 플라스틱 구멍에 녹여 박으면, 여러 번 풀었다 조여도 되는 쇠 나사산이 생깁니다."],
+    diode:["다이오드","전기를 한 방향으로만 보내는 부품. 띠가 있는 쪽으로 전기가 나갑니다."],
+    capacitor:["콘덴서","전기를 잠깐 담아 두는 통. 서보가 갑자기 전기를 많이 끌 때 채워 줘서 전압이 출렁이지 않게 합니다. + − 방향이 있습니다."],
+    silk:["실크","기판 위에 하얗게 인쇄된 글자(5V, GND 같은 이름)."],
+    serial:["시리얼 모니터","Arduino 프로그램 안의 글 대화 창. XIAO 가 보낸 글이 보이고, 여기에 글을 쳐서 XIAO 에 명령을 보냅니다."],
+    upload:["업로드","컴퓨터에서 쓴 프로그램을 보드 안에 집어넣는 일."],
+    ufl:["U.FL","안테나용 아주 작은 둥근 단자. 한쪽을 걸친 뒤 반대쪽을 살짝 눌러 끼웁니다."],
+    b2b:["B2B 커넥터","기판 두 장을 겹쳐서 잇는 납작한 소켓. 옆으로 밀어서 뺍니다."],
+    sense:["Sense 확장보드","XIAO 뒷면에 겹쳐 붙는 두 번째 기판. 카메라 소켓, 마이크, SD 카드 자리가 있습니다."],
+    fpc:["리본 (FPC)","카메라에서 나온 얇고 납작한 주황 띠 케이블. 접거나 당기면 안에 선이 끊길 수 있습니다."],
+    antenna:["안테나","Wi-Fi 전파를 주고받는 선. 끝의 납작한 판이 실제 안테나입니다."],
+    heatsink:["방열판","칩 위에 붙여 열을 공기로 빼내는 작은 금속 조각."],
+    support:["지지대","3D 출력 때 공중에 뜬 부분을 받치려고 같이 뽑힌 가는 기둥. 니퍼로 떼어 버립니다."],
+    yoke:["요크","목에서 머리를 양쪽으로 잡는 ㄷ자 부품. 고개를 끄덕일 때 축이 됩니다."],
+    crank:["크랭크","서보가 도는 움직임을 눈꺼풀이 여닫히는 움직임으로 바꿔 주는 작은 팔."],
+    brass:["황동봉","지름 2mm 금색 쇠막대. 눈꺼풀이 도는 축으로 씁니다."],
+    piano:["피아노선","지름 1mm 단단한 쇠줄. 서보 혼과 크랭크를 잇는 막대로 씁니다."],
+    bearing:["베어링","안쪽 링과 바깥 링이 서로 부드럽게 도는 쇠 고리. 목에서 머리 무게를 받습니다."]
+  };
+  var KEY="snowbot-assembly-v2", saved={};
+  try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")||{};}catch(e){saved={};}
+  var fields=[].slice.call(document.querySelectorAll("[data-save]"));
+  fields.forEach(function(el){var v=saved[el.id];if(v==null)return;if(el.type==="checkbox")el.checked=!!v;else el.value=v;});
+  var MEASURED_1107={"m-mg-l":"22.41","m-mg-w":"11.80","m-mg-h":"22.4","m-mg-tab":"32.2","m-mg-tabz":"14.71","m-mg-shd":"4.8",
+    "m-sg-name":"SG51R","m-sg-l":"21.0","m-sg-w":"12.32","m-sg-h":"19.4","m-sg-tab":"30.0","m-sg-shd":"4.8",
+    "m-brg-od":"18.98","m-brg-t":"4.98","m-lens":"6.96","m-spk-d":"27.84","m-spk-t":"5.5",
+    "m-mg-ok":"4","m-sg-ok":"3","m-servo-note":"11/7 시험: MG90S 4개, SG51R 3개 모두 정상. 처음엔 D0·D3 이 안 돌았는데 원인은 ESP32Servo 라이브러리(같은 타이머 짝의 먼저 붙인 쪽 신호가 끊김). 라이브러리 없이 LEDC 로 직접 신호를 내도록 코드를 바꿔 해결. 시리얼 t 명령으로 핀 신호 확인 가능.",
+    "m-size-note":"11/7 기록. 다시 잴 것: MG90S ⑥(축 지름과 같은 값이 적힘)·⑦ 바닥~축 끝·① 길이, SG51R ③(덮개 뺌)·⑥, 공차 판 B 창 결과."};
+  fields.forEach(function(el){var v=MEASURED_1107[el.id];if(v!=null&&!el.value)el.value=v;});
+  var NIGHT_1107={"m-mg-shaft":"5.64","m-mg-shd":"4.89","m-mg-total":"31.59","m-mg-b":"8.89","m-card":"0.81",
+    "m-sg-l":"21.61","m-sg-h":"15.94","m-sg-shd":"3.82","m-sg-shaft":"5.68",
+    "m-size-note":"11/7 밤 사진 실측. MG90S: ⑦ 바닥~축 끝 31.59(설계 29.0), 바닥~날개 윗면 19.50, ⓑ 8.89 · ⓒ 0.81 · ⓐ 4.89 → ⑥ 5.64, 위에서 잰 폭 11.61. SG51R: 길이 21.61, 덮개 뺀 높이 15.94, 위에서 잰 폭 11.82, 축 지름 3.82, 축 먼 쪽~덮개 끝면 7.59 → ⑥ 5.68. 남은 것: MG90S 날개 두께·① 길이, SG51R 바닥~축 끝·덮개 길이, 공차 판 B."};
+  if(!saved["_night1107"]){fields.forEach(function(el){var v=NIGHT_1107[el.id];if(v!=null)el.value=v;});try{saved["_night1107"]=1;}catch(e){}}
+  persist();
+  function persist(){var s={_night1107:1};fields.forEach(function(el){if(el.type==="checkbox"){if(el.checked)s[el.id]=1;}else if(el.value)s[el.id]=el.value;});try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
+  function val(id){var e=document.getElementById(id);return e?e.value:"";}
+  function paint(){
+    var steps=[].slice.call(document.querySelectorAll("[data-step]")),done=0,found=false;
+    steps.forEach(function(st){var on=st.querySelector(".step-h input").checked;st.classList.toggle("done",on);st.classList.toggle("now",!on&&!found);if(!on&&!found)found=true;if(on)done++;});
+    document.getElementById("count").textContent=done+" / "+steps.length;
+    document.getElementById("bar").style.width=(done/steps.length*100)+"%";
+    document.querySelectorAll("[data-bag]").forEach(function(b){b.closest("tr").classList.toggle("got",b.checked);});
+    document.getElementById("sg90-alert").classList.toggle("show",val("m-sg-name")==="SG90");
+    function num(id){return parseFloat(val(id));}
+    function calc(pre,outId){var b=num(pre+"-b"),a=num(pre+"-shd"),c=num("m-card"),o=document.getElementById(outId);
+      if(isFinite(b)&&isFinite(a)&&isFinite(c)){o.innerHTML="계산: ⑥ = ⓑ "+b+" − ⓒ "+c+" − ⓐ "+a+"÷2 = <b>"+(b-c-a/2).toFixed(2)+"</b> → 이 값을 ⑥ 칸에 적어 주세요.";}
+      else o.textContent="ⓑ·ⓒ·ⓐ 를 모두 넣으면 여기에 ⑥ 이 계산됩니다.";}
+    calc("m-mg","mg-calc");calc("m-sg","sg-calc");
+    document.getElementById("mg-shaft-alert").classList.toggle("show",val("m-mg-shaft")!==""&&num("m-mg-shaft")===num("m-mg-shd"));
+    document.getElementById("sg-shaft-alert").classList.toggle("show",val("m-sg-shaft")!==""&&num("m-sg-shaft")===num("m-sg-shd"));
+    document.getElementById("fit-missing").classList.toggle("show",document.getElementById("c10").checked&&(!val("m-mg-fit")||!val("m-sg-fit")));
+    var L=parseFloat(val("m-sg-l")),H=parseFloat(val("m-sg-h"));
+    document.getElementById("sg-big").classList.toggle("show",(isFinite(L)&&L>22.5)||(isFinite(H)&&H>20));
+    document.getElementById("rec-view").textContent=record();
+  }
+  function record(){
+    var lines=["스노우봇 조립 기록 "+new Date().toISOString().slice(0,10)];
+    var steps=[].slice.call(document.querySelectorAll("[data-step]"));
+    var doneN=steps.filter(function(s){return s.querySelector(".step-h input").checked;}).map(function(s){return s.querySelector(".num").textContent;});
+    lines.push("끝낸 단계: "+(doneN.length?doneN.join(", "):"없음"));
+    fields.forEach(function(el){if(el.type==="checkbox"||!el.value||!el.dataset.label)return;lines.push(el.dataset.label+": "+el.value);});
+    return lines.join("\n");
+  }
+  function hook(){persist();paint();}
+  fields.forEach(function(el){el.addEventListener("input",hook);el.addEventListener("change",hook);});
+  document.getElementById("reset").addEventListener("click",function(){fields.forEach(function(el){if(el.type==="checkbox")el.checked=false;});hook();});
+  function copy(text,msgId){var m=document.getElementById(msgId);function ok(){m.textContent="복사했습니다";}function no(){m.textContent="복사가 막혀 있으면 글을 길게 눌러 선택하세요";}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(ok,no);else no();}
+  document.getElementById("copy-rec").addEventListener("click",function(){copy(record(),"copy-rec-msg");});
+  document.getElementById("copy-code").addEventListener("click",function(){copy(document.getElementById("code").textContent,"copy-code-msg");});
+
+  // 브레드보드 구멍 그리기
+  var ns="http://www.w3.org/2000/svg";
+  function dot(g,x,y,r,f){var c=document.createElementNS(ns,"circle");c.setAttribute("cx",x);c.setAttribute("cy",y);c.setAttribute("r",r);c.setAttribute("fill",f);g.appendChild(c);}
+  var rh=document.getElementById("railholes");
+  if(rh){for(var x=52;x<=728;x+=22){dot(rh,x,52,2.6,"#555");dot(rh,x,68,2.6,"#555");}}
+  var hg=document.getElementById("holes");
+  if(hg){for(var x2=52;x2<=728;x2+=22){for(var i=0;i<5;i++){dot(hg,x2,96+i*9.5,2.4,"#666");dot(hg,x2,164+i*9.5,2.4,"#666");}}}
+  // XIAO 핀 지도
+  var pg=document.getElementById("pins");
+  if(pg){
+    var left=[["D0","고개 좌우 서보","#c4561a"],["D1","끄덕임 서보","#c4561a"],["D2","비움",""],["D3","눈꺼풀 서보","#c4561a"],["D4","앰프 BCLK (나중)","#8a8a8a"],["D5","눈썹 서보","#c4561a"],["D6","앰프 LRC (나중)","#8a8a8a"]];
+    var right=[["5V","비움 (오늘 연결 안 함)","#a3262f"],["GND","→ 파란(−) 레일","#2f64d6"],["3V3","비움",""],["D10","비움 (SD 카드)",""],["D9","비움 (SD 카드)",""],["D8","비움 (SD 카드)",""],["D7","앰프 DIN (나중)","#8a8a8a"]];
+    function t(x,y,s,a,f,w,sz){var e=document.createElementNS(ns,"text");e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("text-anchor",a);e.setAttribute("fill",f);e.setAttribute("font-size",sz||14);if(w)e.setAttribute("font-weight","700");e.textContent=s;pg.appendChild(e);}
+    left.forEach(function(p,i){var y=74+i*38;dot(pg,312,y,8,p[2]||"#d8c48a");t(330,y+5,p[0],"start","#fff",true,13);t(290,y+5,p[1],"end",p[2]||"#999",!!p[2]);});
+    right.forEach(function(p,i){var y=74+i*38;dot(pg,468,y,8,p[2]||"#d8c48a");t(450,y+5,p[0],"end","#fff",true,13);t(490,y+5,p[1],"start",p[2]||"#999",!!p[2]);});
+  }
+
+  // 용어 풍선
+  var pop=document.getElementById("pop"),cur=null;
+  function show(btn){var k=btn.dataset.t,g=GLOSS[k];if(!g)return;pop.innerHTML="<b></b><span></span>";pop.firstChild.textContent=g[0];pop.lastChild.textContent=g[1];pop.style.display="block";
+    var r=btn.getBoundingClientRect(),w=pop.offsetWidth,left=r.left+window.scrollX;left=Math.max(10,Math.min(left,window.scrollX+document.documentElement.clientWidth-w-10));
+    pop.style.left=left+"px";pop.style.top=(r.bottom+window.scrollY+8)+"px";cur=btn;}
+  function hide(){pop.style.display="none";cur=null;}
+  document.querySelectorAll(".t").forEach(function(b){b.setAttribute("type","button");b.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();if(cur===b)hide();else show(b);});});
+  document.addEventListener("click",function(e){if(!pop.contains(e.target))hide();});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")hide();});
+  var gl=document.getElementById("gloss");
+  Object.keys(GLOSS).forEach(function(k){var d=document.createElement("div"),b=document.createElement("b");b.textContent=GLOSS[k][0];d.appendChild(b);d.appendChild(document.createTextNode(GLOSS[k][1]));gl.appendChild(d);});
+
+  // 현재 구역 표시
+  var links=[].slice.call(document.querySelectorAll("#nav a"));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute("href"));});
+  function onScroll(){var y=window.scrollY+120,idx=0;secs.forEach(function(s,i){if(s&&s.offsetTop<=y)idx=i;});links.forEach(function(a,i){a.classList.toggle("cur",i===idx);});}
+  window.addEventListener("scroll",onScroll,{passive:true});
+  paint();onScroll();
+})();
+</script>
+</body>
+</html>

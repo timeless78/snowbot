@@ -10,6 +10,7 @@
 **말 끝 → 첫 소리 보통 1.5초**(중간값 1.46초, 17번 중 1.31~2.54초 — 맥 → 서버, 합성 음성, 기록: [../docs/12-latency-measurements.md](../docs/12-latency-measurements.md)). 대화 설정문은 `snowbot_server/chat.py` 의 SYSTEM, 근거는 [../docs/11-conversation-design.md](../docs/11-conversation-design.md).
 대화 기억은 앱별 최근 8번 주고받기, 서버 메모리에만(재시작하면 잊음). 서버 로그에는 말 내용을 남기지 않는다(길이·소리 크기만).
 차 상태(`car`: 기어·운전 분·주의 경고)에 따라 대답 문장 수와 내용을 바꾼다(주행 중 2문장).
+봇 커넥트 규약(BCP) v0.3 (2026-11-04): 봇 `hello`(부위·센서)를 기억해 앱에 알리고, `observe` 를 앱에 건넨다. 대답 표정은 짝 맺은 켜진 봇 모두에 `express`(v0.3 `emotion`·`gesture` + v0.1 `expr`·`head`, 봇에 없는 몸짓은 뺌)로 보내고, Claude 에게는 연결된 봇들의 표정·몸짓 목록을 상황에 적어 준다. 앱 → 봇 `welcome`·`context` 는 그대로 건넨다.
 아직 없는 것: 오래 가는 기억, 집에서 쓰는 폰 앱.
 
 ## 주소
@@ -58,7 +59,7 @@
 ```bash
 cd server
 uv venv --python 3.11 .venv && uv pip install --python .venv -r requirements.txt pytest pytest-timeout httpx
-.venv/bin/python -m pytest -q tests                      # 시험 20개
+.venv/bin/python -m pytest -q tests                      # 시험 46개 (중계 27 + 봇 시험기 19)
 SNOWBOT_DB=dev.db .venv/bin/uvicorn --factory snowbot_server.main:create_app --port 3000   # 내 맥에서 띄우기
 ```
 
@@ -87,3 +88,29 @@ ssh snowbot-proto 'journalctl -u snowbot-relay -f'   # 로그 보기
 .venv/bin/python tools/sim.py talk   --server https://<서버> --token <토큰> --text "공기 어때?"
 # 시험용 말 만들기 (맥): say -v Yuna -o q.aiff "나 좀 졸려" && afconvert -f WAVE -d LEI16@16000 -c 1 q.aiff q.wav
 ```
+
+## 봇 시험기 (적합성 시험)
+
+봇을 만드는 사람이 규약을 지키는지 스스로 확인하는 도구다([규약 9절](../docs/pleos/03-module-protocol.md#9-적합성-시험-봇-시험기)).
+시험기가 **허브(앱) 역할**을 하는 작은 로컬 허브를 띄우고, 봇이 거기 붙으면 9절 표의 항목을 검사해
+✅/❌/⚠️ 표로 보여 준다. 봇 쪽 접속 방식은 중계 서버와 같다(첫 메시지 `auth` → `auth_ok` → `hello`)
+— 봇은 서버 주소만 바꾸면 고칠 것이 없다. 기기 키는 검사하지 않고, 하나라도 ❌ 면 끝 코드 1 이다.
+
+```bash
+.venv/bin/python tools/bcp_check.py --port 8787     # 봇이 ws://127.0.0.1:8787/ws 로 붙기를 기다린다
+.venv/bin/python tools/bcp_check.py --json          # 결과를 JSON 으로 (표는 표준오류로)
+# 봇을 직접 띄우면서: {server} 가 http://127.0.0.1:포트 로 바뀐다
+.venv/bin/python tools/bcp_check.py --run ".venv/bin/python tools/sim.py device --server {server} --device-id X --key Y"
+# 브라우저 봇(LED 큐브): 시험기를 먼저 띄우고 led-cube.html#server=ws://127.0.0.1:8787/ws&dev=<ID>&key=<키> 를 연다
+```
+
+검사 항목: 봇 설명(필수 필드·부위 범위·최소 감정 4개) · 의도(감정 7가지에 `ack`, 없는 감정 대체) ·
+몸짓·부위(선언한 몸짓, 범위 밖 `pose`) · 관찰(선언 주기·단위) · 연결(`ping`→`pong`, 끊은 뒤 `hello` 부터) ·
+반응 시간(`express`→`ack`, 목표 300ms).
+
+한계: 봇이 **실제로 움직였는지**는 밖에서 볼 수 없다 — `ack` 가 온 것까지만 본다. 범위 자르기는
+봇이 `ack` 에 `targets`(적용값)를 넣을 때만 검사하고, 아니면 "끊기지 않고 답했다"까지만 본다.
+관찰 주기는 선언값의 0.5~1.5배를 통과로 보고, 시험 시간이 주기보다 짧으면 "간격을 재지 못했다"고 적는다.
+
+2026-11-08 기준 가상 봇 두 대(`sim.py device`, `led-cube.html`)는 `ack`·`pong`·다시 붙기가 없어
+의도 · 몸짓·부위 · 연결 · 반응 시간이 ❌ 로 나온다. 시험기를 느슨하게 하지 않고 그대로 보고한다.

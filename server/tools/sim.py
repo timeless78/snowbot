@@ -19,15 +19,41 @@ import urllib.request
 import wave
 
 from websockets.asyncio.client import connect
+from websockets.exceptions import ConnectionClosed
 
-HELLO = {
-    "type": "hello", "model": "SnowBot SNW-01 (sim)", "fw": "sim",
-    "capabilities": [
-        {"id": "express", "expr": ["neutral", "happy", "sleepy", "worried", "alert", "guard", "greet"],
-         "head": ["nod", "shake", "turn_left", "turn_right"], "brow": True, "eyelid": True},
-        {"id": "speaker"}, {"id": "mic"}, {"id": "env", "sensors": ["temp", "co2"]},
+HELLO = {   # 봇 커넥트 규약(BCP) v0.3 봇 설명 — docs/pleos/03-module-protocol.md 3-1절
+    "bcp": "0.3", "type": "hello",
+    "bot": {"id": "", "model": "SnowBot SNW-01 (sim)", "maker": "snowbot", "fw": "sim", "name": "스노봇"},
+    "place": {"where": "dashboard_center", "facing": "cabin", "power": "usb"},
+    # 모습(규약 3-5): 허브 화면의 입자 구름이 이 선 위로 모인다. 큰 머리 + 작은 몸통 + 스피커 그릴,
+    # marks 로 눈·눈썹·코(주황)·목도리(주황) 자리. 원은 큐빅 네 조각(k = 0.5523 r)으로 그렸다.
+    "look": {
+        "viewbox": [120, 160],
+        "color": "#7FC4FF",
+        "outline": (
+            "M102 50 C102 73.2 83.2 92 60 92 C36.8 92 18 73.2 18 50 C18 26.8 36.8 8 60 8 C83.2 8 102 26.8 102 50 Z "
+            "M86 116 C86 130.4 74.4 142 60 142 C45.6 142 34 130.4 34 116 C34 101.6 45.6 90 60 90 C74.4 90 86 101.6 86 116 Z "
+            "M66 120 C66 123.3 63.3 126 60 126 C56.7 126 54 123.3 54 120 C54 116.7 56.7 114 60 114 C63.3 114 66 116.7 66 120 Z"
+        ),
+        "marks": {
+            "eyes": [[44, 46], [76, 46]],
+            "brows": [[44, 30], [76, 30]],
+            "nose": [[60, 58]],
+            "scarf": [[24, 84], [42, 90], [60, 92], [78, 90], [96, 84]],
+        },
+    },
+    "parts": [
+        {"id": "eyelid", "kind": "eyelid", "count": 2, "axes": {"open": [0, 1]}, "fastest_ms": 120},
+        {"id": "brow", "kind": "brow", "count": 2, "axes": {"lift": [-1, 1], "tilt": [-1, 1]}},
+        {"id": "head", "kind": "neck", "axes": {"pan": [-40, 40], "tilt": [-15, 20]}, "unit": "deg", "max_dps": 120},
+        {"id": "spk", "kind": "speaker", "voice": "hub_stream"},
+        {"id": "mic", "kind": "microphone", "listen": "hub_stream"},
     ],
-    "power": "usb",
+    "sensors": [{"id": "env", "measures": [{"name": "co2", "unit": "ppm"}, {"name": "temp", "unit": "C"}], "period_s": 10}],
+    "expressions": {"emotions": ["neutral", "happy", "greet", "worried", "sleepy", "alert", "guard"],
+                    "gestures": ["nod", "shake", "look_left", "look_right", "look_up", "look_down"]},
+    "actions": [],
+    "wants": ["car.motion", "car.outside", "car.cabin", "car.warning", "car.energy", "driver.state", "trip"],
 }
 
 
@@ -57,18 +83,60 @@ def pair(args) -> None:
         print(r.read().decode())
 
 
+def _ranges() -> dict[str, tuple[float, float]]:
+    """HELLO 의 부위 범위: {"head.pan": (-40, 40), ...}"""
+    out = {}
+    for part in HELLO.get("parts", []):
+        for axis, rng in (part.get("axes") or {}).items():
+            out[f"{part['id']}.{axis}"] = (float(rng[0]), float(rng[1]))
+    return out
+
+
+def reply_to(msg: dict) -> dict | None:
+    """규약 2-3: ping 에는 pong, id 가 붙은 지시에는 ack. pose 는 범위 안으로 잘라 실제 적용값을 돌려준다."""
+    kind, mid = msg.get("type"), msg.get("id")
+    if kind == "ping":
+        return {"bcp": "0.3", "type": "pong", "id": mid}
+    if mid is None or kind not in ("express", "gesture", "pose", "action", "say", "listen", "mode"):
+        return None
+    ack = {"bcp": "0.3", "type": "ack", "id": mid}
+    if kind == "express":
+        emotion = msg.get("emotion") or msg.get("expr") or "neutral"
+        ack["emotion"] = emotion if emotion in HELLO["expressions"]["emotions"] else "neutral"
+    if kind == "pose" and isinstance(msg.get("targets"), dict):
+        ranges, applied = _ranges(), {}
+        for key, value in msg["targets"].items():
+            if key in ranges and isinstance(value, (int, float)):
+                lo, hi = ranges[key]
+                applied[key] = min(max(float(value), lo), hi)
+        ack["targets"] = applied
+    return ack
+
+
 async def device(args) -> None:
+    """끊기면 2초 뒤 다시 붙어 hello 부터 보낸다(규약 2-4). Ctrl+C 로 끝낸다."""
+    while True:
+        try:
+            await device_once(args)
+        except (OSError, ConnectionError, ConnectionClosed) as e:
+            print(f"         (연결 끊김: {e.__class__.__name__}) 2초 뒤 다시 연결", flush=True)
+        else:
+            print("         (연결 끊김) 2초 뒤 다시 연결", flush=True)
+        await asyncio.sleep(2)
+
+
+async def device_once(args) -> None:
     async with connect(ws_url(args.server)) as ws:
         await ws.send(json.dumps({"type": "auth", "device_id": args.device_id, "key": args.key}))
         show("<-", json.loads(await ws.recv()))
-        await ws.send(json.dumps(HELLO))
+        await ws.send(json.dumps({**HELLO, "bot": {**HELLO["bot"], "id": args.device_id}}))
 
         async def sensors():
-            co2 = 800
+            co2 = args.co2
             while True:
                 await asyncio.sleep(args.every)
                 co2 += 50
-                event = {"type": "event", "cap": "env", "data": {"temp": 24.5, "co2": co2}, "sim": True}
+                event = {"bcp": "0.3", "type": "observe", "sensor": "env", "data": {"temp": 24.5, "co2": co2}, "sim": True}
                 await ws.send(json.dumps(event))
                 show("->", event)
 
@@ -97,10 +165,15 @@ async def device(args) -> None:
                 if msg.get("type") == "echo":
                     await ws.send(raw)
                     continue
+                reply = reply_to(msg)
+                if reply is not None:
+                    await ws.send(json.dumps(reply))
+                    if reply["type"] == "pong":
+                        continue
                 show("<-", msg)
                 if msg.get("type") == "express":
                     heard_at = time.perf_counter()
-                    print(f"         (표정 {msg.get('expr')} / 고개 {msg.get('head')} / 말 {msg.get('say')!r})", flush=True)
+                    print(f"         (감정 {msg.get('emotion') or msg.get('expr')} / 몸짓 {msg.get('gesture') or msg.get('head')} / 말 {msg.get('say')!r})", flush=True)
         finally:
             task.cancel()
 
@@ -211,6 +284,7 @@ def main() -> None:
     sub.choices["device"].add_argument("--device-id", required=True)
     sub.choices["device"].add_argument("--key", required=True)
     sub.choices["device"].add_argument("--every", type=float, default=10, help="센서 값 보내는 간격(초)")
+    sub.choices["device"].add_argument("--co2", type=int, default=800, help="CO₂ 시작 값(ppm), 보낼 때마다 50씩 오른다")
     sub.choices["device"].add_argument("--audio-dir", default=os.path.join(tempfile.gettempdir(), "snowbot-sim"),
                                        help="받은 목소리를 WAV 로 저장할 폴더")
     sub.choices["app"].add_argument("--token", required=True)

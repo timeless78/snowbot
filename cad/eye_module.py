@@ -36,7 +36,7 @@ HUB_R, HUB_X0, HUB_X1 = 2.4, 12.9, 14.8   # 눈꺼풀 양옆 축 고정부 (눈 
 LEG_PHI = 268.0       # 흰자 돔 고정 다리 방향 (눈꺼풀이 지나지 않는 아래쪽)
 
 PUPIL_D, PUPIL_T = 13.0, 1.5   # 검은자 지름·두께
-LENS_D = 6.4                   # 카메라 렌즈 구멍 (실측 필요)
+LENS_D = 7.2                   # 카메라 렌즈 구멍 (렌즈 실측 6.96, 2026-11-07)
 CAM_BOX = (8.0, 4.0, 8.0)      # 카메라 모듈 가로·두께·세로 (추정, 실측 필요)
 CAM_FRONT = -8.5               # 돔 중심에서 카메라 모듈 앞면까지 (y)
 
@@ -47,7 +47,8 @@ CRANK_T = 2.0
 CRANK_CLOSED = 75.0   # 눈 감았을 때 크랭크 각 φ → 뜨면 +135 = 210°
 LINK_D = 1.0
 LINK_X = -1.7
-EYELID_SERVO_OFS = (10.5, -12.0)   # 크랭크 축 → 눈꺼풀 서보 축 (y, z). 이 방향(약 229°)을 크랭크가 지나면 안 됨
+EYELID_SERVO_OFS = (15.0, -12.0)   # 크랭크 축 → 눈꺼풀 서보 축 (y, z). 이 방향(약 229°)을 크랭크가 지나면 안 됨
+#   2026-11-07: SG51R 실측(바닥~축 끝 24.89)으로 몸통이 길어져 (10.5, -12) 에서는 머리 벽에 닿음 → 뒤로 4.5mm 옮기고 축 둘레로 -18° 돌림 (아래로 옮기면 끄덕임 혼, 덜 옮기면 왼쪽 눈꺼풀과 닿음)
 
 # ── 코 ────────────────────────────────────────────────────
 NOSE_DZ = -7.0        # 머리 중심 기준 높이
@@ -62,16 +63,33 @@ BROW_SWING = 20.0              # 눈썹 회전 ±20°
 LEVER_R = 33.0                 # 레버가 있는 깊이 (머리 중심에서)
 LEVER_LEN = 13.0               # 축 → 레버 끝
 SLIDER_Y0, SLIDER_Y1 = -5.0, 19.5   # 슬라이더 아래·위 끝 (서보 축 기준). 아래는 열린 눈꺼풀, 위는 머리 벽에 닿는다
-GUIDE_YS, GUIDE_D = (8.0, 12.5), 2.0  # 안내 핀 2개: 서보 축 위 8·12.5 (혼이 도는 범위 약 6.3 밖)·지름
+GUIDE_YS, GUIDE_D = (9.6, 13.0), 2.0  # 안내 핀 2개: 서보 축 위 9.6·13 (톱니 덮개가 축 위 8.1 까지 있어 그 뒤 몸통 윗면에)·지름
 GUIDE_SLOT = 2 * 4.5 + 2.0 + 0.6   # 홈 길이 = 슬라이더 움직임 ±4.5 + 핀 + 여유
 GUIDE_PLATE_T = 1.0
+GUIDE_PLATE_W = 11.7           # 안내 판 폭 (서보 폭과 따로 — 서보 실측 12.3 으로 넓히면 틀과 겹친다)
 SERVO_GAP = 1.6                # 혼과 서보 윗면 사이 (안내 판 1mm 가 들어감)
 HORN_SLOT_W = 5.0              # 슬라이더 가로 홈 폭 (혼 핀이 오가는 x ±1.2 + 핀 + 여유)
 
 # SG51R (자료값 21.5 × 11.7, 높이는 추정)
-SG_L, SG_W, SG_H = 21.5, 11.7, 17.0
-SG_SHAFT_FROM_END = 5.5
+# SG51R 실측 2026-11-07: 길이 21.61, 폭 12.32(위에서 잰 값 11.82), 바닥~몸통 윗면 19.4, 바닥~축 끝 24.89.
+#   몸통 윗면 위에 축 쪽 끝부터 약 13.8 길이의 볼록한 톱니 덮개(높이 약 3.7, 사진 비율)가 있고, 그 위로 흰 축이 약 1.8 나온다.
+#   (15.94 는 날개·이음선 높이였다.) 혼은 덮개 윗면(축 어깨)에 얹힌다.
+SG_L, SG_W, SG_H = 21.6, 12.3, 19.4
+SG_TOTAL = 24.89                      # 바닥 ~ 축 끝
+SG_BUMP_L, SG_BUMP_H = 13.8, 3.7      # 톱니 덮개: 축 쪽 끝면부터 길이, 높이
+HORN_SEAT = 0.2                       # 혼 아랫면과 덮개 윗면 사이
+SG_SHAFT_FROM_END = 5.68              # 실측: 축 먼 쪽 ~ 덮개 끝면 7.59 − 축 지름 3.82/2
 HORN_T = 1.6
+SG_BUMP_TOP = HORN_T / 2 + HORN_SEAT                 # 혼 가운데 면 → 덮개 윗면 (축 방향 거리)
+SG_CASE_TOP = SG_BUMP_TOP + SG_BUMP_H                # 혼 가운데 면 → 몸통 윗면
+
+
+def sg51r_body() -> Part:
+    """SG51R 몸통 + 톱니 덮개. 원점 = 혼 가운데 면의 축 위치, 축은 +z(혼 쪽), 몸통 길이 방향 +y."""
+    y0 = -SG_SHAFT_FROM_END
+    case = Pos(0, y0 + SG_L / 2, -SG_CASE_TOP - SG_H / 2) * Box(SG_W, SG_L, SG_H)
+    bump = Pos(0, y0 + SG_BUMP_L / 2, -SG_BUMP_TOP - SG_BUMP_H / 2) * Box(SG_W, SG_BUMP_L, SG_BUMP_H)
+    return case + bump
 
 
 def center() -> Vector:
@@ -145,9 +163,13 @@ def head_add() -> Part:
 
 def head_cut() -> Part:
     cut = Part()
+    _, ay, az = axle_center()
     for s in (1, -1):
         cut += Pos(*eye_center(s)) * Sphere(POD_IN)
         cut += brow_frame(s) * (Pos(0, 0, HEAD_R) * Cylinder(AXLE_D / 2 + 0.15, 16))
+        # 눈꺼풀 축이 바깥쪽 눈 테 벽을 뚫고 지나는 구멍 (2026-11-07 1차 출력에서 빠진 것 발견).
+        # 축은 한쪽 구멍으로 밀어 넣고, 끝은 벽 바깥면에 맞춰 자른다.
+        cut += Pos(s * (EYE_X + POD_OUT), ay, az) * along_x(AXLE_D / 2 + 0.15, 6)
     cz = head_center_z()
     ny = -math.sqrt(HEAD_R**2 - NOSE_DZ**2)
     cut += Pos(0, ny + NOSE_PEG_LEN / 2, cz + NOSE_DZ) * along_y(NOSE_PEG_D / 2 + 0.15, NOSE_PEG_LEN + 2)
@@ -212,6 +234,14 @@ def eyelid_servo_center() -> tuple[float, float, float]:
     return (x, y + EYELID_SERVO_OFS[0], z + EYELID_SERVO_OFS[1])
 
 
+EYELID_SERVO_ROLL = -18.0   # 눈꺼풀 서보를 축 둘레로 돌린 각 (뒤 아래 모서리를 끄덕임 혼 위로 올림)
+
+
+def eyelid_servo_location() -> Location:
+    """눈꺼풀 서보 좌표계: 원점 = 혼 가운데 면의 축, 로컬 +z = 혼 쪽(-x), 로컬 +y = 몸통 길이(뒤)."""
+    return Plane(origin=eyelid_servo_center(), x_dir=Vector(0, 0, 1), z_dir=Vector(-1, 0, 0)).location * Rot(0, 0, EYELID_SERVO_ROLL)
+
+
 def eyelid_linkage(opened: float) -> dict[str, Part]:
     phi = CRANK_CLOSED + LID_OPEN * opened
     ax = axle_center()
@@ -219,7 +249,7 @@ def eyelid_linkage(opened: float) -> dict[str, Part]:
     dy, dz = phi_dir(phi)
     tip_a = (LINK_X, ax[1] + CRANK_R * dy, ax[2] + CRANK_R * dz)
     tip_h = (LINK_X, hs[1] + CRANK_R * dy, hs[2] + CRANK_R * dz)
-    servo = Pos(hs[0] + HORN_T / 2 + 0.6 + SG_H / 2 + 0.4, hs[1] - SG_SHAFT_FROM_END + SG_L / 2, hs[2]) * Box(SG_H, SG_L, SG_W)
+    servo = eyelid_servo_location() * sg51r_body()   # 몸통이 +x 로
     return {
         "eyelid_crank": Pos(*ax) * arm(CRANK_R, CRANK_T, phi),
         "eyelid_horn": Pos(*hs) * arm(CRANK_R, HORN_T, phi),
@@ -279,16 +309,18 @@ def brows(swing: float) -> dict[str, Part]:
     horn_ang = math.degrees(math.asin(max(-1.0, min(1.0, slide / horn_r)))) if ang else 0.0
     horn = Rot(0, 0, horn_ang) * Pos(horn_r / 2, 0, 0) * Box(horn_r + 3.6, 3.6, HORN_T)
     parts["brow_horn"] = horn_frame * horn
-    # 안내 판: 서보 윗면에 붙이는 얇은 판 + 핀 2개 (슬라이더 세로 홈을 지난다)
-    face_z = -(HORN_T / 2 + SERVO_GAP)
-    gy0, gy1 = GUIDE_YS[0] - 2.0, GUIDE_YS[1] + 2.5
-    guide = Pos(0, (gy0 + gy1) / 2, face_z + GUIDE_PLATE_T / 2) * Box(SG_W, gy1 - gy0, GUIDE_PLATE_T)   # 핀(x=shift)도 서보 폭 안
+    # 안내 블록: 톱니 덮개 뒤 몸통 윗면에 붙이는 블록 + 핀 2개 (슬라이더 세로 홈을 지난다)
+    face_z = -(HORN_T / 2 + SERVO_GAP)                       # 블록 윗면 = 예전 안내 판 아랫면 높이
+    gy0 = -SG_SHAFT_FROM_END + SG_BUMP_L + 0.2               # 덮개 바로 뒤
+    gy1 = GUIDE_YS[1] + 2.5
+    z0 = -SG_CASE_TOP
+    guide = Pos(0, (gy0 + gy1) / 2, (z0 + face_z + GUIDE_PLATE_T) / 2) * Box(GUIDE_PLATE_W, gy1 - gy0, face_z + GUIDE_PLATE_T - z0)   # 핀(x=shift)도 서보 폭 안
     for gy in GUIDE_YS:
         pin_len = (2.2 + 1.0 + 0.4 + HORN_T / 2 + 1.5) - (face_z + GUIDE_PLATE_T)
         guide += Pos(shift, gy, face_z + GUIDE_PLATE_T + pin_len / 2) * Cylinder(GUIDE_D / 2, pin_len)   # 슬라이더 가운데
     parts["brow_guide"] = horn_frame * guide
     # 서보 몸체는 판을 따라 위(뒤쪽 위)로 세운다 — 옆으로 눕히면 레버에 닿는다
-    parts["sg51r_brow"] = horn_frame * Pos(0, -SG_SHAFT_FROM_END + SG_L / 2, face_z - SG_H / 2) * Box(SG_W, SG_L, SG_H)
+    parts["sg51r_brow"] = horn_frame * sg51r_body()
     return parts
 
 

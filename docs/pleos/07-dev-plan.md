@@ -61,7 +61,7 @@
 | 출발 점검 | P → D, 주행 가능 거리 50km 미만 | "주유는 오늘 해야 해요. 120km 남았어요." | Odometer `getRangeRemainingDistance`, Fuel, EvBattery | ✅ |
 | 하차 점검 | D → P 뒤 문이 열림, 창문이 열려 있음 | "창문이 조금 열려 있어요." | Door, Window | ✅ |
 | 하차 점검 | 뒷좌석에 사람이 탔던 운행이 끝남 | "뒤에 두고 내린 것 없죠?" | Seat `getCurrentSeatOccupancy` | ✅ |
-| 경고등 통역 | 새 경고등이 켜짐 | "타이어 바람이 빠졌대요. 다음 휴게소에서 봐요." | Safety `getTelltalesInfo` (5초마다 조회) | ✅ 37종 |
+| 경고등 통역 | 새 경고등이 켜짐 | "타이어 공기압 경고등이 켜졌어요." (조치는 말하지 않음, 바로 위험한 넷만 "안전한 곳에 세워 주세요") | Safety `getTelltalesInfo` (5초마다 조회) | ✅ 37종 |
 | 환기 권유 (모듈 없이) | 내기 순환이 30분 넘게 켜짐 | "공기 한번 바꿔 줄까요? 외기로 돌려 봐요." | HVAC `getHvacRecirculationState` | ✅ |
 | 환기 권유 (모듈 있음) | CO₂ 1,500ppm 이상 | 지금과 같음 | 모듈 센서 | — |
 | 휴게소 제안 | 회전 안내가 휴게소 진입(`TURN_RESTAREA`, `TURN_ENTER_SERVICEAREA`) + 연속 운전 90분 이상 | "곧 휴게소예요. 쉬어 갈까요?" | NaviHelper `onTBTInfo` | 확인 필요 |

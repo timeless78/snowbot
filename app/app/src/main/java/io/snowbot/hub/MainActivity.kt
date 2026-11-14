@@ -22,7 +22,7 @@ import androidx.core.content.ContextCompat
  */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var snowbot: SnowBotView
+    private lateinit var snowbot: ParticleView
     private lateinit var speech: TextView
     private lateinit var heard: TextView
     private lateinit var talkButton: Button
@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var device: TextView
     private lateinit var air: TextView
     private lateinit var car: TextView
+    private lateinit var panel: TextView
+    private lateinit var flash: TextView
+    private lateinit var bots: TextView
     private lateinit var voiceButton: Button
     private lateinit var testButtons: List<View>
     private lateinit var pairing: View
@@ -65,6 +68,9 @@ class MainActivity : AppCompatActivity() {
         device = findViewById(R.id.device)
         air = findViewById(R.id.air)
         car = findViewById(R.id.car)
+        panel = findViewById(R.id.panel)
+        flash = findViewById(R.id.flash)
+        bots = findViewById(R.id.bots)
         voiceButton = findViewById(R.id.voice_button)
         testButtons = listOf(R.id.btn_greet, R.id.btn_rest, R.id.btn_worry).map { findViewById(it) }
         pairing = findViewById(R.id.pairing)
@@ -79,6 +85,7 @@ class MainActivity : AppCompatActivity() {
             service?.pair(id, claim)
         }
         findViewById<Button>(R.id.unpair_button).setOnClickListener { service?.unpair() }
+        findViewById<Button>(R.id.add_bot_button).setOnClickListener { service?.let { it.showPairing(!it.ui.pairing) } }
         voiceButton.setOnClickListener { service?.toggleVoice() }
 
         SnowBotService.start(this)
@@ -103,6 +110,10 @@ class MainActivity : AppCompatActivity() {
             snowbot.setExpression(ui.expr, if (faceSeq == -1) null else ui.head)
             faceSeq = ui.faceSeq
         }
+        // 입자 구름: 연결된 봇의 모습으로 모이고(없으면 빛 방울), 말하기·듣기·주행에 따라 움직임이 바뀐다
+        snowbot.setLook(ui.look)
+        snowbot.setVoice(ui.speaking, ui.talking)
+        snowbot.setDriving(ui.driving)
         speech.text = ui.speech ?: getString(R.string.hello_line)
         heard.visibility = if (ui.heard == null) View.GONE else View.VISIBLE
         heard.text = ui.heard.orEmpty()
@@ -112,6 +123,13 @@ class MainActivity : AppCompatActivity() {
         device.text = ui.device
         air.text = ui.air ?: getString(R.string.air_unknown)
         car.text = ui.car
+        panel.text = ui.panel.joinToString("\n") { item ->
+            val value = item.value ?: getString(R.string.panel_none)
+            getString(R.string.panel_row, item.label, if (item.ok) value else "$value ⚠")
+        }
+        flash.visibility = if (ui.flash == null) View.GONE else View.VISIBLE
+        flash.text = ui.flash.orEmpty()
+        bots.text = if (ui.bots.isEmpty()) getString(R.string.bots_none) else getString(R.string.bots_title) + "\n" + ui.bots
         voiceButton.setText(if (ui.voiceInCar) R.string.voice_app else R.string.voice_device)
         pairing.visibility = if (ui.pairing) View.VISIBLE else View.GONE
         testButtons.forEach { it.visibility = if (ui.driving) View.GONE else View.VISIBLE }
@@ -140,7 +158,12 @@ class MainActivity : AppCompatActivity() {
      *   adb shell "am start -n io.snowbot.hub/.MainActivity --es chat '나 좀 졸려'"     글자로 말 걸기
      *   adb shell "am start -n io.snowbot.hub/.MainActivity --es car 'gear=D add=118 attention=1'"
      *     gear=P|R|N|D 기어, add=분 연속 운전 시간 더하기, attention=1|0 주의 경고등
-     *     turn=L|R|0 방향지시등, steer=도 핸들 각도, wiper=1|0, beam=1|0 전조등, cruise=1|0 크루즈 작동
+     *     wiper=1|0 와이퍼(비), beam=1|0 전조등, recirc=1|0 내기 순환, ac=1|0 에어컨, defrost=1|0 앞유리 성에 제거
+     *   adb shell "am start -n io.snowbot.hub/.MainActivity --es observe 'humidity=80 co2=1600'"   봇이 보낸 것처럼 공기 값
+     *   adb shell "am start -n io.snowbot.hub/.MainActivity --es nav 'dest_km=52 eta_min=40'"      내비가 준 것처럼
+     *     dest_km=목적지까지 km, eta_min=남은 분, dest=이름, congested=1|0 앞 정체, guiding=1|0, off=1 모두 되돌리기
+     *   --es hello '{"type":"hello","device_id":"SIM-01","look":{…},…}'   봇 설명을 보낸 것처럼 (화면 입자가 그 모습으로 모임)
+     *   --es bye 'SIM-01'                                                 그 봇이 꺼진 것처럼 (입자가 빛 방울로 돌아감)
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -151,6 +174,10 @@ class MainActivity : AppCompatActivity() {
         if (!BuildConfig.DEBUG) return
         val s = service ?: return
         intent.getStringExtra("car")?.let { s.pretendCar(it) }
+        intent.getStringExtra("observe")?.let { s.pretendObserve(it) }
+        intent.getStringExtra("nav")?.let { s.pretendNav(it) }
+        intent.getStringExtra("hello")?.let { s.pretendHello(it) }
+        intent.getStringExtra("bye")?.let { s.pretendBye(it) }
         val text = intent.getStringExtra("chat")?.let(PleosVoice::fixName)
         if (text.isNullOrBlank()) return
         heard.visibility = View.VISIBLE

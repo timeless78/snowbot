@@ -24,3 +24,7 @@ cad/out/
 
 # 실제 서버 주소가 든 배포용 설정 (저장소에는 자리표시만)
 server/deploy/*.local
+
+# 내려받은 사진·영상, 생성한 그림·영상 (GitHub 에 올리지 않는다)
+assets/
+generated-images/

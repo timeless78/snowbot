@@ -94,7 +94,7 @@
 | 스마트 글라스 | `getCurrentSmartGlassState` / `…Level` / `getSmartGlassConfig` | Boolean / Int | CAR_WINDOWS | G·C | O | ✗ |
 | 사이드미러 열선 | `SideMirror.getHvacSideMirrorHeatState` | Int(단계) | CAR_MIRRORS | G·C | O | ✗ |
 | 좌석 위치·각도 10종 | `Seat.getCurrentSeatForeAftPosition`, `…HeightPosition`, `…BackrestAnglePosition`, `…TiltPosition`, `…DepthPosition`, 헤드레스트 3종, 요추 2종 | Int (범위는 차마다) | CAR_SEATS | G·C | O | ✗ |
-| 안전벨트 착용 | `Seat.getCurrentSeatBeltBuckledState(SeatArea)` | Boolean | CAR_SEATS | G·C | O | ✗ (경고등 SEAT_BELT 로만) |
+| 안전벨트 착용 | `Seat.getCurrentSeatBeltBuckledState(SeatArea)` | Boolean | CAR_SEATS | G·C | O | ✗ (경고등 SEAT_BELT 로만) — **값은 읽힌다**(11/8) |
 | 안전벨트 미착용 경고 | `Safety.hasSeatBeltNotBuckledWarning(SeatArea)` | Boolean (true=안 맴) | CAR_SAFETY | G·C | O | ? |
 | 안전벨트 높이 | `Seat.getCurrentSeatBeltHeightPosition` | Int | CAR_SEATS | G·C | O | ✗ |
 
@@ -121,12 +121,26 @@
 | 항목 | API | 값·단위 | 받는 법 | VC |
 |---|---|---|---|---|
 | 공조 전원 | `getHvacPowerState` | Boolean | G·C | ✅ |
-| 에어컨 | `getHvacAcState` | Boolean | G·C | ✅ |
+| 에어컨 | `getHvacAcState` | Boolean | G·C | ✅ — 앱 구독 중(김서림 권유 반응). 11/8 VC `PUT /vehicle/hvac?ac=true` → 앱 `에어컨=true` |
 | 최대 냉방 | `getHvacMaxAcState` | Boolean | G·C | ✗ |
 | 오토 | `getHvacAutoState` | Boolean | G·C | ✅ |
 | 좌우 동기화 | `getHvacDualState` | Boolean | G·C | ✅ |
 | **내기 순환** | `getHvacRecirculationState` | Boolean (true=내기) | G·C | ✅ Fresh/Recirculate |
 | 자동 내기 전환 | `getHvacAutoRecirculationState` | Boolean | G·C | ✗ |
+
+⚠ **내기 순환 구독의 콜백 이름이 SDK 안에서 어긋나 있다** (2026-11-08 aar 직접 확인). 두 값은 register 함수가
+따로 있는데 **리스너 인터페이스를 하나로 같이 쓰고**, 그 인터페이스의 유일한 메서드 이름이
+`onHvacAutoRecirculationStateUpdated` 다. 그래서 수동 내·외기를 구독하는 코드도 "Auto" 가 붙은 메서드를
+구현하게 되어 자동 내기 전환을 보는 것처럼 읽힌다. 실제로 어느 값이 오는지는 register 쪽이 정한다:
+
+| register | 받는 속성 |
+|---|---|
+| `registerHvacRecirculationState(SeatArea, HvacRecirculationStateListener)` | `PleosPropertyIds.HVAC_RECIRC_ON` (수동 내·외기) |
+| `registerHvacAutoRecirculationState(SeatArea, HvacRecirculationStateListener)` | `PleosPropertyIds.HVAC_AUTO_RECIRC_ON` (자동 전환 설정) |
+
+앱(`CarState.recircListener`)은 `registerHvacRecirculationState` 로 등록하므로 **수동 내·외기가 맞다** —
+메서드 이름만 잘못 붙어 있고 고칠 코드는 없다. 확인 방법: aar 의 `HVACImpl` 바이트코드에서 각 register 가
+참조하는 `PleosPropertyIds` 상수를 본다(`javap -p -c`).
 | 풍량 | `getHvacFanSpeed` | Int(단계) | G·C | ✅ 0~8 |
 | 바람 방향 | `getHvacFanDirection` | FACE, FLOOR, DEFROST, 조합 4종, UNKNOWN | G | ✅ |
 | 설정 온도 | `getHvacTemperature(area, unit)` | °C / °F | G·C | ✅ 16~30 °C |
@@ -153,7 +167,7 @@
 | 충전 전류 제한 | `EvBattery.getEvChargeCurrentDrawLimit` | A | CAR_ENERGY | G | O | ✅ 10~48 A |
 | 목표 충전량 | **조회 함수 없음** (capability 확인·설정만) | % | — | — | — | ✅(값 설정만) |
 | 전비 4종 | `getCurrentEvEfficiency` / `Instantaneous` / `Cumulative` / `SinceCharge` | Float, **단위 문서 없음** | CAR_ENERGY | G·C | O | ✗ |
-| 연료 잔량 | `Fuel.getFuelPercent` (AAOS `FUEL_LEVEL` 도 있음) | % (Int) | CAR_ENERGY | G·C | O | ✗ 연료 카드 없음 |
+| 연료 잔량 | `Fuel.getFuelPercent` (AAOS `FUEL_LEVEL` 도 있음) | % (Int) | CAR_ENERGY | G·C | O | ✗ 연료 카드 없음 — **에뮬레이터는 속성 자체가 없다**(11/8) |
 | 연비 4종 | `getCurrentFuelEconomy` / `Instantaneous` / `Cumulative` / `SinceChargeFuelEconomy`(주유 후) | Float, **단위 문서 없음** | CAR_ENERGY | G·C | O | ✗ |
 | 주행 가능 거리 ★ | `Odometer.getRangeRemainingDistance` / `registerRangeRemainingListener` (AAOS `RANGE_REMAINING` 도 있음) | m | CAR_DRIVE | G·C | O | ✅ 0~1,000,000 m |
 | 연료·배터리 부족 경고 | 경고등 `LOW_FUEL`, `LOW_EV_BATTERY` | ON/OFF/BLINK | CAR_SAFETY | G | O | ✅(경고등) |
@@ -184,15 +198,34 @@
 
 | 항목 | API | 값·단위 | 권한 | 받는 법 | 주행 중 | VC |
 |---|---|---|---|---|---|---|
-| **경고등 목록(telltale)** | `Safety.getTelltalesInfo` → `Telltales.telltales: List<TelltaleData>` | 경고등마다 type, state(OFF/ON/BLINK), color, priority, warningCount | **조회 CAR_SAFETY** / 구독 `registerTelltales` 는 **PRIVATE_CAR_SAFETY(불가)** | **G만** → 바뀐 걸 알려면 주기적으로 다시 물어봐야 함 | O | ✅ (지원 경고등 Off/On/Blink) |
+| **경고등 목록(telltale)** | `Safety.getTelltalesInfo` → `Telltales.telltales: List<TelltaleData>` | 경고등마다 type, state(OFF/ON/BLINK), color, priority, warningCount | **조회·구독 둘 다 PRIVATE_CAR_SAFETY** (aar 실측 — 문서는 조회가 CAR_SAFETY 라고 적지만 다르다, 아래 ⚠) | G·C | O | ✅ (지원 경고등 Off/On/Blink) |
 | 엔진오일·브레이크액·변속기오일 | `getEngineOilLevelState`, `getBrakeFluidLevelState`, `getTransmissionOilLevelState` | LOW / NORMAL / HIGH / CRITICALLY_LOW / ERROR | CAR_SAFETY | G·C | O | ✗ |
 | 엔진 이상(파워다운) 경고 | `hasPowerDownWarningIndicator` | Boolean | CAR_SAFETY | G·C | O | ✗ |
 | 타이어 저압 기준값 | `Tire.getLowTirePressure(WheelArea)` | kPa — **현재 공기압이 아니라 "이 아래면 위험" 기준값** | CAR_SAFETY | G | O | ✗ |
-| 실제 타이어 공기압 ★ | `Tire.getTirePressure` | kPa | **PRIVATE_CAR_SAFETY(불가)** | — | — | ✗ |
+| 실제 타이어 공기압 ★ | `Tire.getTirePressure` | kPa | PRIVATE_CAR_SAFETY (에뮬레이터에서는 normal — 11/8) | G·C | O | ✗ |
 
-> ⚠ 2026-11-04 에뮬레이터: `getTelltalesInfo` 가 **"getTelltalesInfo need Permission"** 으로 실패한다(CAR_SAFETY granted=true, 앱 화면을 열어도 같음). SDK 는 CAR_SAFETY 만 요구한다(`@RequiresCustomPermission`). 차량 서비스 쪽 거절로 보인다 — 원인 확인 필요. 그동안 주의 경고 기능은 시험 명령으로만 확인했다.
+> ⚠ **"getTelltalesInfo need Permission" 의 원인 (2026-11-08 해결).**
+> Vehicle 2.3.2 aar 의 `SafetyImpl` 을 뜯어 보니 `getTelltalesInfo`·`registerTelltales`·`checkTelltalesCapabilities`
+> 세 함수 모두 `@RequiresCustomPermission(permissions = ["pleos.car.permission.PRIVATE_CAR_SAFETY"])` 이다.
+> 같은 클래스의 다른 함수(`hasSeatBeltNotBuckledWarning`, `getEngineOilLevelState` …)는 `CAR_SAFETY` 다.
+> **문서(조회는 CAR_SAFETY)와 aar 가 다르다.** 권한 검사는 차량 서비스가 아니라 **SDK 안에서** 한다
+> (`vehicle/utils/f`: 호출한 함수 이름을 스택에서 찾아 애너테이션을 읽고 `ContextCompat.checkSelfPermission`).
+> 그래서 매니페스트에 안 적힌 권한이면 차와 통신하기도 전에 `SecurityException("<함수명> need Permission")` 이 난다.
+>
+> 에뮬레이터에서 `pleos.car.permission.PRIVATE_CAR_SAFETY` 의 **보호 수준은 normal** 이다
+> (`adb shell pm list permissions -f -g` 로 확인). 그래서 매니페스트에 적기만 하면 허용된다:
+> ```
+> pm list permissions -f -g | grep -A4 PRIVATE_CAR_SAFETY   # protectionLevel:normal
+> dumpsys package io.snowbot.hub | grep PRIVATE_CAR_SAFETY  # granted=true
+> ```
+> **2026-11-08 확인**: 권한을 선언한 뒤 `getTelltalesInfo` 가 성공하고(`getProperty_onResult … TELLTALES`),
+> `registerTelltales` 구독도 와서 Virtual Console 에서 경고등을 켜면 **5초 안에** 앱이 받는다.
+> 앱(`CarState`)은 이 권한이 없는 차에서도 죽지 않는다 — 실패를 한 번만 적고 경고등 기능만 쉰다.
+>
+> ⚠ 남은 위험: Pleos 문서는 `PRIVATE_*` 를 "내부용, 공식 예제에서도 뺐다"고 한다. **실차에서 같은 보호 수준인지
+> 확인되지 않았다**(signature 이면 선언해도 허용되지 않는다). 사무국 문의 후보 1순위.
 
-**경고등 종류(80여 개) 중 스노봇에 쓸 만한 것**: `DRIVER_ATTENTION`(운전자 주의 경고), `OVER_SPEED`, `ICY_ROAD`, `SEAT_BELT`, `DOOR_OPEN`, `TRUNK_OPEN`, `TPMS`(타이어), `LOW_FUEL`, `LOW_EV_BATTERY`, `EV_CHARGING_CONNECTOR`, `PARKING_BRAKE`, `AUTO_HOLD`, `MASTER_WARNING`, `ENGINE_TEMPERATURE`, ADAS 계열 `FCA`(전방 충돌 방지), `LKA`/`LFA`(차선 유지·따라가기), `LCA_LEFT/RIGHT`, `ELK`, `ICC`(스마트 크루즈), 드라이브 모드 계열(ECO/SPORT …), `CHILD_PRESENCE_DETECTION_OFF`.
+**경고등 종류(SDK `TelltaleType` 98종 — aar 실측) 중 스노봇에 쓸 만한 것**: `DRIVER_ATTENTION`(운전자 주의 경고), `OVER_SPEED`, `ICY_ROAD`, `SEAT_BELT`, `DOOR_OPEN`, `TRUNK_OPEN`, `TPMS`(타이어), `LOW_FUEL`, `LOW_EV_BATTERY`, `EV_CHARGING_CONNECTOR`, `PARKING_BRAKE`, `AUTO_HOLD`, `MASTER_WARNING`, `ENGINE_TEMPERATURE`, ADAS 계열 `FCA`(전방 충돌 방지), `LKA`/`LFA`(차선 유지·따라가기), `LCA_LEFT/RIGHT`, `ELK`, `ICC`(스마트 크루즈), 드라이브 모드 계열(ECO/SPORT …), `CHILD_PRESENCE_DETECTION_OFF`.
 에뮬레이터 Virtual Console 의 Telltales 카드가 지원하는 경고등(2026-10-28 직접 확인, 37종): Parking Brake, Electronic Parking Brake, Seat Belt, Door Open, ABS, MDPS, TPMS, Low Volt Battery, ESC, ESC Off, Airbag, AFS, Master Warning, Auto Hold, Auto High Beam, Headlamp Low/High, Position Lamp, Front/Rear Fog Lamp, Engine Oil Pressure, Engine Temperature, Emergency Call, EV System, Power Down, RBS, Immobilizer, Engine, LED Headlamp, Preheat, Particle Filter, H2 Sensor, H2 Leak, Passenger Airbag Off/On, Turn Signal Left/Right. **DRIVER_ATTENTION 은 없다** → 앱 시험은 디버그 명령으로 대신한다([../../app/README.md](../../app/README.md)).
 Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 http://127.0.0.1:8088/ (기어 P/R/N/D, 가속·브레이크 페달로 속도도 바뀐다).
 
@@ -229,6 +262,33 @@ Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 htt
 
 데이터는 아니지만 관련된 요청: `requestRoute`(목적지 설정), `addWaypoint`/`requestRouteWithWaypoints`(경유지 — 순서 값이 FIRST/SECOND 뿐이라 2개까지로 보임), `changeRouteOption`, `requestNavigationScreen`(장소 검색·주변 충전소·경로 미리보기 화면 열기).
 **휴게소·장소를 앱이 검색하는 API 는 없다** — 쉼터 경유지를 넣으려면 좌표를 앱이 따로 알아야 한다(내비 검색 화면을 열어 사용자에게 고르게 하는 것은 가능).
+
+### 에뮬레이터 확인 (2026-11-09, aar 실측 + PleosConnect 에뮬레이터)
+
+문서의 "VC 에 내비 카드 없음 · 내비 앱이 도는지 확인 못 함(?)"을 실제로 확인했다. **에뮬레이터에 내비가 돌고 있고 NaviHelper 가 붙는다.**
+
+| 확인한 것 | 결과 |
+|---|---|
+| 내비 앱 존재 | ✅ `ai.pleos.playground.service.navi` + `ai.umos.maps.android.navigation.app` 가 깔려 있고 `navi_engine` 프로세스가 돈다 |
+| `NaviHelper.initialize(onSuccess, onError)` | ✅ onSuccess 가 온다 (로그 `내비 SDK 붙음`). 권한 `NAVI_ROUTE`·`NAVI_ROUTE_SEARCH`·`NAVI_CUSTOM_MAP` 는 매니페스트 선언만으로 허용 |
+| `getDestinationInfo()` → `onDestinationInfo` | ✅ 콜백이 온다. 목적지가 없으면 이름 빈 글자, 남은 거리·시간 **0** 으로 온다 (0 은 "모름"으로 봐야 한다) |
+| `getRouteStateInfo()` → `onRouteStateInfo` | ✅ 콜백이 온다. 길 안내를 안 할 때 `isRouting=false`, `naviMode=SAFE_GUIDING`, 정체 목록 비어 있음. `trafficStatus` 는 **null 일 수 있다**(Kotlin 에서 nullable) |
+| `onNavigationStatus` | ❓ 바뀔 때만 와서 이번 확인에서는 오지 않았다 (목적지를 넣어 안내를 시작해야 확인된다) |
+| `onDrivingInfo` | ❓ 같은 이유로 확인 못 함 (길 안내 중에만 온다) |
+| `requestNavigationScreen(SearchPlace("주유소"))` | ✅ 내비 앱이 앞으로 나온다 (`topResumedActivity=ai.umos.maps.android.navigation.app/.MainActivity`) |
+| `requestNavigationScreen(NearbyChargingStations)` | ✅ 같은 방식으로 열린다 |
+| `requestRoute` / `addWaypoint` | ❌ 안 써 봤다 — 앱이 목적지를 **정하지 않기로** 했다(운전자가 고른다) |
+
+aar 실측으로 알게 된 것 (문서에 없던 것)
+- `NavigationScreenRequest` 에 **`SearchPlace(keyword)`** 가 있다 — 앱이 낱말을 넣어 내비의 장소 검색 화면을 열 수 있다.
+  장소를 **앱이 검색해 받는** API 는 여전히 없지만, "주유소 찾아줄까요? → 응" 에 쓸 수 있다.
+  그 밖에 `NearbyChargingStations` · `RouteOptionList`(다른 길 고르기) · `OverviewRoute` · `RecentDestinations` · `EditRoute` 등.
+- 정체는 `RouteStateInfo.trafficStatus.congestionItemList` 의 `TrafficCongestionType`(UNKNOWN/FAST/MODERATE/**SLOW**/**HEAVY**)로 본다.
+  구간마다 `distance`(m)·`avrSpeed`·`roadName` 이 있고, `summary` 에 전체 정체 거리·시간·평균 속도가 있다.
+- `DestinationInfo.remainDistance`(m)·`remainTime`(초)는 **Int** 이고 값이 없으면 0 이다.
+
+앱 쪽: `app/.../NaviState.kt`. 내비가 없는 차에서도 죽지 않게 `initialize` 실패를 로그 한 줄로 넘기고,
+내비 값이 null 이면 그 조건(목적지까지 거리·정체)을 아예 보지 않는다.
 
 ## 10. 위치 (FusedLocation SDK 1.1.3)
 
@@ -267,8 +327,8 @@ Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 htt
 - 운전자 얼굴·시선·실내 카메라 — 없음(하드웨어 직접 접근 금지).
 - **실내 CO₂·공기질·미세먼지·습도** — 없음(공기 청정기 켜짐 여부만).
 - 비 센서·일사량·바깥 밝기·날씨 — 없음.
-- 경고등 **실시간 구독**(`registerTelltales`) — PRIVATE 권한이라 불가. 조회(get)는 가능.
-- 실제 타이어 공기압(`getTirePressure`) — PRIVATE 권한이라 불가. 기준값과 TPMS 경고등만.
+- ~~실제 타이어 공기압(`getTirePressure`)~~ — PRIVATE_CAR_SAFETY 권한. 에뮬레이터에서는 그 권한이 normal 이라
+  선언하면 쓸 수 있을 것으로 보인다(11/8, 아직 안 써 봄). 지금 앱은 기준값과 TPMS 경고등만 쓴다.
 - 목표 충전량 조회 — 함수 없음(설정만).
 - 비상등·제동등 상태 조회 — 함수 없음.
 - 앞차와의 거리 등 ADAS 세부 값 — 없음(ADAS 경고등만). 예제 앱 매니페스트에 `READ_ADAS_STATES` 권한이 있지만 문서화된 API 는 없다.
@@ -278,7 +338,28 @@ Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 htt
 - LLM SDK — 문서 쪽은 남아 있지만 에뮬레이터 2.1.0 릴리즈 노트에 **"LLM SDK 제공 종료"**.
 - 블루투스 동글 연동 — 에뮬레이터 2.1.0 에서 제공 종료.
 
+**에뮬레이터에서 실제로 읽어 본 것 (2026-11-08, 앱 `CarState` + Virtual Console)**
+
+| 값 | API | 결과 |
+|---|---|---|
+| 경고등 목록 | `Safety.getTelltalesInfo` · `registerTelltales` | ✅ `PRIVATE_CAR_SAFETY` 선언 뒤 조회·구독 모두 됨. VC Telltales 카드로 켜면 앱이 5초 안에 받음 |
+| 좌석 탑승 | `Seat.getCurrentSeatOccupancy` + `registerSeatOccupancy` | ✅ VC Seat Occupancy 카드와 연동. 구역은 `checkSeatOccupancyCapabilities` 가 주는 것만 |
+| 안전벨트 착용 | `Seat.getCurrentSeatBeltBuckledState` | ✅ 값이 온다. 단 **에뮬레이터는 늘 `false`(안 맴)** 이고 VC 에 매는 카드가 없다 |
+| 창문 위치 | `Window.getCurrentWindowPosition` + 구독 | ✅ VC Window Position(0~100%). `checkWindowPositionCapabilities` 는 구역마다 `AreaBounds`(최소=닫힘)를 준다 |
+| 문 열림 | `Door.getCurrentDoorPosition` + 구독 | ✅ VC Door Position(열림/닫힘) |
+| 주행 가능 거리 | `Odometer.getRangeRemainingDistance` + 구독 | ✅ VC Remaining Range(m). **2.3.2 에서 deprecated** — "Google RANGE_REMAINING 속성을 쓰라"고 함 |
+| EV 배터리 잔량 | `EvBattery.getEvBatteryStateOfCharge` + 구독 | ✅ VC Battery SOC |
+| 연료 잔량 | `Fuel.getFuelPercent` | ❌ `property ID is not in carPropertyConfig list … 0x21400be5` — 이 에뮬레이터(전기차)에 속성이 없다 |
+
+Virtual Console 을 스크립트로 조작하는 길은 `/vehicle/catalog` 에 전부 적혀 있다(각 기능의 `write_endpoint`·`control.field`).
+경고등: `PUT /vehicle/telltales/simulator?type=TPMS&state=On&color=Yellow` (type 은 `GET /vehicle/telltales` 의 37종).
+좌석 탑승 `PUT /vehicle/seat?kind=occupied&area=driver&value=true` · 창문 `PUT /vehicle/body?window_rl=60` ·
+문 `PUT /vehicle/body?door_rl=true` · 주행 가능 거리 `PUT /vehicle/odometer?remaining_range_m=40000` ·
+배터리 `PUT /vehicle/ev-battery?field=soc&value=12`.
+
 **확인 못 함 (실측·문의 필요)**
+- **`PRIVATE_CAR_SAFETY` 가 실차에서도 normal 인지** (에뮬레이터는 normal). signature 면 경고등 통역이 실차에서 막힌다.
+- `TelltaleData.color`·`priority`·`warningCount` 의 값 체계(색 Int 가 `TelltaleColor` 순서인지). 앱은 쓰지 않는다.
 - 에뮬레이터에서 **차 속도를 바꾸는 방법** — Virtual Console 카드 목록에 속도가 없다. (04 문서의 "속도를 바꿔 가며 시험"은 이번 문서 기준으로는 근거가 없다.) 주행 규제(`CarUxRestrictions`)를 에뮬레이터에서 켜는 방법도 미확인.
 - AAOS 속성(`PERF_VEHICLE_SPEED`, `GEAR_SELECTION`, `IGNITION_STATE`, `ENV_OUTSIDE_TEMPERATURE`, `FUEL_LEVEL`)이 Pleos 에뮬레이터·차에서 실제로 읽히는지, 권한 허용 창이 뜨는지.
 - 트립 운전 시간 단위(초/분), "Current" 트립의 시작 기준.
@@ -290,7 +371,10 @@ Virtual Console 여는 법: `adb forward tcp:8088 tcp:8088` → 브라우저 htt
 **권한·신청 정리**
 - 신청 없이 지금 쓸 수 있음: **Vehicle 조회(CAR_* 권한, 매니페스트 선언만)**, **NaviHelper(NAVI_* 권한)**, AAOS `CarUxRestrictions`.
 - 신청해야 하는데 지금은 불가("준비 중"): **FusedLocation**, **Vehicle Control(모든 set)**. (TTS·STT 는 10/28 설명회 안내대로 권한만으로 쓸 수 있었다 — 11/2 확인, 앱에 적용. 설명회는 FusedLocation 도 같다고 했으나 아직 안 써 봄)
-- 일반 앱은 못 씀: PRIVATE_* (경고등 구독, 실제 타이어 공기압, capability 정보).
+- PRIVATE_* : Pleos 문서는 "내부용"이라고 하지만 **에뮬레이터에서는 보호 수준이 normal 이라 선언만으로 허용된다**
+  (11/8 실측, `pleos.car.permission.PRIVATE_CAR_*` 9개 모두 normal). 경고등 목록은 PRIVATE_CAR_SAFETY 가
+  **반드시** 필요하다(aar 애너테이션). `Tire.getTirePressure`(실제 공기압)도 같은 권한이라 **지금은 읽힐 수 있다**
+  — 아직 써 보지 않았다. **실차 보호 수준은 확인 필요.**
 - AAOS 속도·에너지 권한은 Google 기준 사용자 허용이 필요할 수 있음(미확인).
 
 ---

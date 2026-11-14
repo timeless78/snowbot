@@ -37,9 +37,8 @@
     <string name="car_failed">차: 차량 정보를 못 받음 (%1$s)</string>
     <string name="car_attention_on">켜짐</string>
     <string name="car_attention_off">없음</string>
-    <string name="car_hours">%1$d시간</string>
-    <string name="car_hours_mins">%1$d시간 %2$d분</string>
-    <string name="car_rest">벌써 %1$s째 운전 중이에요. 쉼터에서 잠깐 쉬어 가요.</string>
+    <string name="car_rest_h">벌써 %1$d시간째 운전 중이에요. 쉼터에서 잠깐 쉬어 가요.</string>
+    <string name="car_rest_hm">벌써 %1$d시간 %2$d분째 운전 중이에요. 쉼터에서 잠깐 쉬어 가요.</string>
     <string-array name="car_depart">
         <item>출발해요! 오늘도 안전하게 가요.</item>
         <item>출발! 저는 옆에서 차 안 공기 살필게요.</item>
@@ -55,14 +54,51 @@
         <item>차가 주의 경고를 띄웠어요. 다음 쉼터에서 잠깐 쉬어 가요.</item>
         <item>많이 피곤한가 봐요. 쉼터에서 잠깐 쉬었다 가요.</item>
     </string-array>
-    <string name="car_load">운전 부담 %1$d · %2$s</string>
-    <string-array name="load_names">
-        <item>여유</item>
-        <item>보통</item>
-        <item>주의 (한 문장)</item>
-        <item>바쁨 (말 멈춤)</item>
-    </string-array>
     <string name="notify_channel">스노봇 동승</string>
     <string name="notify_text">차 상태를 살피는 중이에요. 출발·도착과 안전 알림 때 말을 걸어요.</string>
-    <string name="line_air">차 안 공기가 답답해요. 창문을 조금 열어 볼까요?</string>
+    <string name="bots_title">연결된 봇</string>
+    <string name="bots_none">아직 연결된 봇이 없습니다</string>
+    <string name="add_bot">봇 추가</string>
+    <string name="air_line">실내 공기 (봇 측정): %1$s</string>
+    <string name="air_co2">CO₂ %1$d ppm</string>
+    <string name="air_humidity">습도 %1$d%%</string>
+    <string name="air_temp">%1$.1f°C</string>
+    <!-- 편의 권유 (Ladder 2칸). 3칸은 같은 말을 반복하지 않고 다른 방법을 권한다 -->
+    <string name="line_stuffy_recirc">CO₂ %1$s피피엠이에요. 외기로 바꿔 볼까요?</string>
+    <string name="line_fog">습도가 %1$d퍼센트라 유리에 김 서릴 것 같아요. 에어컨 켜 볼까요?</string>
+    <string name="line_fog_ac_on">습도가 %1$d퍼센트라 유리에 김 서릴 것 같아요. 앞유리 성에 제거를 켜 볼까요?</string>
+    <string name="line_air">차 안 CO₂ %1$s피피엠이에요. 창문을 조금 열어 볼까요?</string>
+    <string name="line_stuffy_recirc_again">%1$s에서 %2$s까지 올랐어요. 창문도 조금 열어 볼까요?</string>
+    <string name="line_air_again">%1$s에서 %2$s까지 올랐어요. 잠깐 환기하고 가요.</string>
+    <string name="line_fog_again">습도가 %1$d에서 %2$d퍼센트까지 올랐어요. 창문을 조금 열어 볼까요?</string>
+    <!-- 출발·하차 점검 (Checkup). 인사 뒤에 한 호흡으로 붙는다 -->
+    <string name="check_belt">%1$s 안전벨트가 아직이에요.</string>
+    <string name="check_belt_many">안전벨트 안 맨 자리가 있어요. 매고 가요.</string>
+    <string name="check_range">갈 수 있는 거리가 %1$d킬로미터쯤 남았어요. 가는 길에 들러요.</string>
+    <string name="check_fuel">연료가 %1$d퍼센트 남았어요. 주유소에 들러요.</string>
+    <string name="check_soc">배터리가 %1$d퍼센트 남았어요. 충전소에 들러요.</string>
+    <string name="check_window">%1$s이 열려 있어요. 닫고 가요.</string>
+    <string name="check_door">%1$s이 덜 닫혔어요.</string>
+    <string name="check_rear">뒤에 두고 내린 것 없죠?</string>
+    <!-- 변화·회복 보고, 대조 (CarWatch) -->
+    <string name="warn_off">%1$s 경고등 꺼졌어요.</string>
+    <string name="watch_range_short">남은 거리 %1$d킬로미터, 목적지까지 %2$d킬로미터예요. %3$s 찾아볼까요?</string>
+    <string name="watch_range_low">갈 수 있는 거리가 %1$d킬로미터 남았어요.</string>
+    <string name="watch_time_over">%1$d시간째가 돼요. 도착까지 %2$d분 남았어요. 쉬어 갈까요?</string>
+    <string name="watch_rain_window">비 오는데 창문이 열려 있어요.</string>
+    <string name="watch_no_beam">밤인데 전조등이 꺼져 있어요.</string>
+    <string name="watch_door_open">주행 중인데 문이 열려 있어요.</string>
+    <string name="watch_jam">이 앞 정체예요. 다른 길 볼까요?</string>
+    <string name="watch_jam_km">이 앞 %1$d킬로미터 정체예요. 다른 길 볼까요?</string>
+    <!-- 운전자 말에 대한 답 (DriverWords) -->
+    <string name="cant_control">아직 제가 직접 못 움직여요. %1$s 직접 해 주셔야 해요.</string>
+    <string name="cant_control_any">아직 제가 차를 직접 못 움직여요.</string>
+    <string name="cant_talk">지금 인터넷이 끊겨서 대화는 어려워요. 차 상태는 볼 수 있어요.</string>
+    <string name="working">확인 중이에요.</string>
+    <string name="navi_opened">내비 화면 열었어요.</string>
+    <string name="navi_missing">내비를 쓸 수 없어요.</string>
+    <!-- 화면의 차 상태 패널 -->
+    <string name="panel_title">차 상태</string>
+    <string name="panel_none">—</string>
+    <string name="panel_row">%1$s %2$s</string>
 </resources>

@@ -15,6 +15,21 @@
     <!-- 말할 때 판단기 (신청 불필요): 방향지시등·전조등 / 와이퍼 -->
     <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
     <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <!-- 봇에 주는 차 정보: 내기 순환 (신청 불필요) -->
+    <uses-permission android:name="pleos.car.permission.CAR_CLIMATE" />
+    <!-- 출발·하차 점검 (신청 불필요): 좌석 탑승·안전벨트 / 문·트렁크 / 주행 가능 거리는 CAR_DRIVE, 연료·EV 잔량 -->
+    <uses-permission android:name="pleos.car.permission.CAR_SEATS" />
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
+    <!-- 내비게이션 (NaviHelper, 신청 불필요): 목적지까지 남은 거리·시간·앞 정체 조회 / 경로 요청 / 주유소·충전소 화면 열기 -->
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+    <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+    <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />
+    <!-- 경고등 목록(Safety.getTelltalesInfo · registerTelltales).
+         Vehicle SDK 2.3.2 의 aar 는 이 셋에 PRIVATE_CAR_SAFETY 를 요구한다(@RequiresCustomPermission).
+         Pleos 문서는 조회가 CAR_SAFETY 라고 적고 있어 서로 다르다. 에뮬레이터에서는 이 권한의 보호 수준이
+         normal 이라 선언만으로 허용된다. 실차에서 막히면 경고등 통역만 쉬고(로그 한 번) 나머지는 그대로 돈다. -->
+    <uses-permission android:name="pleos.car.permission.PRIVATE_CAR_SAFETY" />
     <!-- 앱 화면을 닫아도 차 상태를 보고 출발·도착·안전 알림을 하는 포그라운드 서비스 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
