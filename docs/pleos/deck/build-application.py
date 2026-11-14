@@ -84,6 +84,8 @@ ITEM3 = [
           "같은 김서림 알림도 스노봇은 눈썹과 목소리로, LED 큐브는 주황빛과 효과음으로 전합니다. "
           "봇은 허락받은 정보만 받고, 카메라·마이크는 원본이 아니라 결과만 보냅니다. "
           "제조사가 규약을 지키는지 스스로 확인하는 봇 시험기도 함께 냅니다."),
+    ("img", "other-bots.jpg", "그림 2. 같은 규약에 붙을 다른 봇 예시 시안 (AI 로 만든 그림): 휴머노이드형 · 호랑이형. "
+                              "같은 기구에 겉모습만 바꾼 것입니다. 시연 영상에는 몸이 전혀 다른 가상 봇 LED 큐브가 나옵니다", 105),
     ("h", "봇이 없을 때: 화면 속 입자 구름"),
     ("p", "빛 입자가 모인 구름이 표정을 대신합니다. 봇을 연결하면 입자가 그 봇의 모양으로 모입니다. "
           "주행 중에는 입자 수와 움직임을 줄여 시선을 끌지 않습니다."),
@@ -120,7 +122,7 @@ ITEM4 = [
 ITEM5 = [
     ("lead", "핵심 기능은 이미 Pleos 에뮬레이터에서 동작합니다."),
     ("p", "PT(12/3)까지는 말 이해 개선, 실물 스노봇 연결, 내비 길 안내 중 값 확인을 합니다."),
-    ("img", "fig2.png", "그림 2. 차 · 앱 · 봇 · 백엔드 구성도"),
+    ("img", "fig2.png", "그림 3. 차 · 앱 · 봇 · 백엔드 구성도"),
     ("p", "봇은 지금 Wi-Fi로 백엔드 중계에 붙고, 최종에는 블루투스로 앱에 직접 붙습니다. 규약 메시지는 같고 전송 방법만 바뀝니다."),
     ("h", "지금까지 만든 것 (2026-11-14 기준)"),
     ("t", [["부분", "내용"],
@@ -128,6 +130,10 @@ ITEM5 = [
            ["백엔드 (Python)", "앱과 봇 사이 중계, AI 대답(차 상태를 알고 숫자를 인용), 봇용 목소리. 자동 시험 48개"],
            ["봇 커넥트 규약 v0.3", "봇 설명·허락·차 정보 보내기·봇 센서 받기·표현 명령. 가상 봇 2대(스노봇, LED 큐브)와 봇 시험기"],
            ["스노봇 (첫 번째 봇)", "3D 설계·출력 완료, 실물 조립 중(고개 2축·눈꺼풀 서보, 스피커)"]]),
+    ("h", "스노봇: 목표 디자인과 지금 실물"),
+    ("img", "bot-design.jpg", "그림 4. 스노봇 목표 디자인 (AI 로 만든 그림): 완성 모습과 앞 · 옆 · 뒤"),
+    ("img", "bot-photos.jpg", "그림 5. 지금 만들고 있는 실물 스노봇 (2026-11-14 촬영): 3D 출력한 몸에 고개 · 눈꺼풀 서보와 "
+                              "스피커를 넣었고, 마지막 사진은 머리 안 배선입니다. 서보 연결과 첫 동작 시험을 앞두고 있습니다"),
     ("h", "Pleos SDK 사용 계획"),
     ("t", [["SDK", "쓰는 곳", "상태"],
            ["Vehicle (기어·경고등·문·창문·안전벨트·공조·와이퍼·전조등·주행 가능 거리·배터리)", "판단의 입력 전부. 조회 권한만 씁니다", "동작"],
@@ -178,14 +184,17 @@ ITEM6 = [
 ]
 
 
-def item7(video: str | None) -> list:
+def item7(video: str | None, concept: str | None = None) -> list:
     rows = [["자료", "내용", "위치"]]
     if video:
         rows.append(["시연 영상 (2분, 소리 있음)", "Pleos 에뮬레이터 화면 녹화: 출발 → 김서림 권유 → 경고등과 AI 대답 → 남은 거리 대조와 내비 화면 → 도착 → 차 상태 대답 → 봇 모양 입자 구름", f"첨부 파일 {video} (저장소 docs/demo/ 에도 있음)"])
+    if concept:
+        rows.append(["콘셉트 영상 (17초, 세로)", "AI 로 만든 장면: 대시보드에 스노봇을 올리면 화면의 입자 구름이 스노봇 모양으로 모이는 모습. 실제 앱 화면이 아니라 완성 모습을 보여 주는 영상입니다", f"첨부 파일 {concept}"])
     rows += [
         ["GitHub 저장소", "소스(앱·백엔드), README(실행 방법·테스트 환경·필요한 설정), 봇 커넥트 규약 문서, 가상 봇·봇 시험기", f"{REPO} (비공개, 심사용 계정 초대)"],
         ["APK", "release APK. AI 대화 시험용 가상 봇의 기기 번호·등록 코드는 README 에 있습니다", "저장소 apk/SnowBotConnect_release.apk"],
         ["앱 화면", "차 상태 패널, 입자 구름, 내비 연동 화면 8장", "저장소 README, docs/screens/"],
+        ["스노봇 실물·디자인", "조립 중인 실물 사진 4장, 목표 디자인과 다른 봇 예시 시안 (이 문서 그림 2·4·5)", "저장소 README, docs/screens/"],
     ]
     return [("t", rows)]
 
@@ -265,7 +274,8 @@ def fill(cell, blocks):
                 runs(p, ("• " if kind == "ul" else f"{n}. ") + s)
         elif kind == "img":
             p = para(cell, first); p.paragraph_format.space_before = Pt(6)
-            p.add_run().add_picture(str(FIGS / rest[0]), width=Mm(158))
+            width = rest[2] if len(rest) > 2 else 158
+            p.add_run().add_picture(str(FIGS / rest[0]), width=Mm(width))
             c = cell.add_paragraph(); r = c.add_run(rest[1]); r.font.size = Pt(9); r.font.color.rgb = GRAY
         elif kind == "t":
             rows = rest[0]
@@ -294,6 +304,7 @@ def set_text(par, text: str):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--video", help="첨부할 시연 영상 파일명 (7번 칸에 적음)")
+    ap.add_argument("--concept", help="첨부할 콘셉트 영상 파일명 (7번 칸에 적음)")
     ap.add_argument("--out", default=str(HERE.parent / "submit" / "스노봇커넥트_접수양식.docx"))
     a = ap.parse_args()
 
@@ -309,7 +320,7 @@ def main():
         elif t.startswith("참가 인원:"):
             set_text(p, "참가 인원: 1명")
 
-    items = [ITEM1, ITEM2, ITEM3, ITEM4, ITEM5, ITEM6, item7(a.video), ITEM8]
+    items = [ITEM1, ITEM2, ITEM3, ITEM4, ITEM5, ITEM6, item7(a.video, a.concept), ITEM8]
     answer_tables = d.tables[1:9]   # 0 = 구성원 표, 1~8 = 소개 8칸, 9 = 서명 표
     assert len(answer_tables) == 8 and all(len(t.rows) == 1 for t in answer_tables)
     for t, blocks in zip(answer_tables, items):
