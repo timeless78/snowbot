@@ -53,7 +53,9 @@
 
 | 항목 | 값 |
 |---|---|
-| 에뮬레이터 | Pleos Connect Emulator, 시스템 이미지 `system-images;android-34;pleos_car_emulator;arm64-v8a`, AVD Pleos_Connect_v2_0 (2560×1440, RAM 4GB), macOS (Apple Silicon) |
+| Pleos Connect 에뮬레이터 | 빌드 `RELEASE.release_connect_v2.1.0`, 시스템 이미지 `system-images;android-34;pleos_car_emulator;arm64-v8a`, 기기 프로필 Pleos_Connect_v2_0 |
+| 화면 규격 | 2560×1440 (가로), RAM 4GB |
+| 실행 PC | macOS (Apple Silicon), Android Emulator 37.2.12 |
 | 앱 | `io.snowbot.hub` 0.1.0, minSdk 28 · targetSdk 34, Kotlin, Gradle 8 |
 | Pleos SDK | Vehicle 2.3.2 · NaviHelper 3.0.5 · TextToSpeech 3.3.1 · SpeechToText 3.3.1 |
 | 백엔드 | 클라우드 VM 의 Python FastAPI 중계 서버 (주소는 APK 에 들어 있음) |
